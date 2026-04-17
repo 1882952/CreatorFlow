@@ -1,0 +1,60 @@
+/* CreatorFlow Design Tokens */
+:root {
+  /* Primary */
+  --color-primary: #6C5CE7;
+  --color-primary-light: #A29BFE;
+  --color-accent: #00D2D3;
+
+  /* Background */
+  --bg-primary: #0F0F1A;
+  --bg-secondary: #1A1A2E;
+  --bg-tertiary: #16213E;
+  --bg-glass: rgba(255, 255, 255, 0.05);
+
+  /* Semantic */
+  --color-success: #00B894;
+  --color-warning: #FDCB6E;
+  --color-error: #FF6B6B;
+  --color-info: #74B9FF;
+
+  /* Text */
+  --text-primary: #E8E8F0;
+  --text-secondary: #9898B0;
+  --text-disabled: rgba(152, 152, 176, 0.5);
+
+  /* Border */
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.15);
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+
+  /* Shadow */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(108, 92, 231, 0.3);
+  --shadow-glow-accent: 0 0 20px rgba(0, 210, 211, 0.3);
+
+  /* Transition */
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+  --transition-slow: 500ms ease;
+
+  /* Layout */
+  --sidebar-width: 220px;
+  --sidebar-collapsed-width: 60px;
+  --statusbar-height: 32px;
+}

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --input-type=module -e ':*)",
+      "Bash(node _check_syntax.mjs)",
+      "Bash(node --input-type=module --check)"
+    ]
+  }
+}
