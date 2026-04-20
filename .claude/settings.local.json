@@ -3,7 +3,12 @@
     "allow": [
       "Bash(node --input-type=module -e ':*)",
       "Bash(node _check_syntax.mjs)",
-      "Bash(node --input-type=module --check)"
+      "Bash(node --input-type=module --check)",
+      "Bash(python -c \"import py_compile; py_compile.compile\\('services/ffmpeg_utils.py', doraise=True\\); print\\('ffmpeg_utils.py: OK'\\)\")",
+      "Bash(python:*)",
+      "Bash(taskkill //F //PID 19832)",
+      "Bash(taskkill //F //PID 22012)",
+      "Bash(curl -s --max-time 10 http://localhost:18688/api/health)"
     ]
   }
 }

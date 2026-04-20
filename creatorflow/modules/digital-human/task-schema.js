@@ -37,6 +37,16 @@ export function createTask(overrides = {}) {
     currentNode: null,
     error: null,
     output: { filename: null, subfolder: null, type: null, videoUrl: null },
+    // ── Segment-related fields (v2.1) ──
+    segmentMode: 'auto',        // 'auto' | 'single'
+    maxSegmentDuration: 8,      // Max seconds per segment (2-10)
+    segments: [],               // Segment[] — populated during execution
+    finalOutput: {              // Final concatenated video
+      videoUrl: null,
+      filename: null,
+      duration: null,
+      localPath: null,
+    },
     createdAt: new Date().toISOString(),
     startedAt: null,
     completedAt: null,
@@ -70,6 +80,11 @@ export function normalizeTask(task) {
   if (!task.audio) task.audio = { originalName: null, uploadedName: null, previewUrl: null, size: null, duration: null, uploadState: 'idle' };
   if (!task.output) task.output = { filename: null, subfolder: null, type: null, videoUrl: null };
   if (!task.validation) task.validation = { valid: false, errors: [] };
+  // v2.1 segment fields
+  if (!task.segmentMode) task.segmentMode = 'auto';
+  if (!task.maxSegmentDuration) task.maxSegmentDuration = 8;
+  if (!task.segments) task.segments = [];
+  if (!task.finalOutput) task.finalOutput = { videoUrl: null, filename: null, duration: null, localPath: null };
   return task;
 }
 

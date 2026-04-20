@@ -97,6 +97,136 @@ export function renderSettingsPanel({ container, app }) {
   prefCard.className = 'card';
   prefCard.style.marginTop = '16px';
 
+  // ── Orchestrator Service Section ─────────────────────────────
+  const orchCard = document.createElement('div');
+  orchCard.className = 'card';
+  orchCard.style.marginTop = '16px';
+
+  const orchHeader = document.createElement('div');
+  orchHeader.className = 'card-header';
+  orchHeader.innerHTML = `<span class="card-title">编排服务设置</span>`;
+  orchCard.appendChild(orchHeader);
+
+  const orchDesc = document.createElement('p');
+  orchDesc.style.cssText = 'color:var(--text-secondary);margin-bottom:16px;font-size:13px;';
+  orchDesc.textContent = '配置本地编排服务地址和分段生成参数。';
+  orchCard.appendChild(orchDesc);
+
+  // Orchestrator URL
+  const orchGroup = document.createElement('div');
+  orchGroup.style.cssText = 'display:flex;flex-direction:column;gap:12px;';
+
+  const orchLabel = document.createElement('label');
+  orchLabel.style.cssText = 'display:block;margin-bottom:4px;font-size:12px;color:var(--text-secondary);';
+  orchLabel.textContent = '编排服务地址';
+  orchGroup.appendChild(orchLabel);
+
+  const orchRow = document.createElement('div');
+  orchRow.style.cssText = 'display:flex;gap:8px;';
+
+  const orchInput = document.createElement('input');
+  orchInput.type = 'text';
+  orchInput.className = 'input-field';
+  orchInput.id = 'settings-orchestrator-url';
+  orchInput.value = saved.orchestratorBaseUrl || 'http://localhost:18688';
+  orchInput.placeholder = 'http://localhost:18688';
+  orchRow.appendChild(orchInput);
+
+  const orchTestBtn = document.createElement('button');
+  orchTestBtn.className = 'btn btn-secondary btn-sm';
+  orchTestBtn.textContent = '测试连接';
+  orchTestBtn.dataset.action = 'test-orchestrator';
+  orchRow.appendChild(orchTestBtn);
+
+  orchGroup.appendChild(orchRow);
+  orchCard.appendChild(orchGroup);
+
+  // Orchestrator test result
+  const orchTestResult = document.createElement('div');
+  orchTestResult.dataset.role = 'orch-test-result';
+  orchTestResult.style.cssText = 'margin-top:8px;font-size:12px;min-height:18px;';
+  orchCard.appendChild(orchTestResult);
+
+  // Default output directory
+  const outputGroup = document.createElement('div');
+  outputGroup.style.cssText = 'margin-top:12px;';
+
+  const outputLabel = document.createElement('label');
+  outputLabel.style.cssText = 'display:block;margin-bottom:4px;font-size:12px;color:var(--text-secondary);';
+  outputLabel.textContent = '默认输出目录';
+  outputGroup.appendChild(outputLabel);
+
+  const outputInput = document.createElement('input');
+  outputInput.type = 'text';
+  outputInput.className = 'input-field';
+  outputInput.id = 'settings-output-dir';
+  outputInput.value = saved.defaultOutputDir || '';
+  outputInput.placeholder = '留空则使用服务端默认目录';
+  outputGroup.appendChild(outputInput);
+
+  orchCard.appendChild(outputGroup);
+
+  // Execution mode toggle
+  const modeGroup = document.createElement('div');
+  modeGroup.style.cssText = 'margin-top:12px;display:flex;align-items:center;justify-content:space-between;';
+
+  const modeLabel = document.createElement('span');
+  modeLabel.style.cssText = 'font-size:13px;color:var(--text-primary);';
+  modeLabel.textContent = '执行模式';
+
+  const modeSelect = document.createElement('select');
+  modeSelect.className = 'input-field';
+  modeSelect.style.cssText = 'width:auto;min-width:140px;';
+  modeSelect.id = 'settings-execution-mode';
+  modeSelect.innerHTML = `
+    <option value="orchestrated" ${saved.executionMode !== 'direct' ? 'selected' : ''}>编排服务（推荐）</option>
+    <option value="direct" ${saved.executionMode === 'direct' ? 'selected' : ''}>直连 ComfyUI（旧版）</option>
+  `;
+  modeGroup.appendChild(modeLabel);
+  modeGroup.appendChild(modeSelect);
+  orchCard.appendChild(modeGroup);
+
+  // Cleanup delay
+  const cleanupGroup = document.createElement('div');
+  cleanupGroup.style.cssText = 'margin-top:12px;display:flex;align-items:center;justify-content:space-between;';
+
+  const cleanupLabel = document.createElement('span');
+  cleanupLabel.style.cssText = 'font-size:13px;color:var(--text-primary);';
+  cleanupLabel.textContent = '自动清理延迟（秒）';
+
+  const cleanupInput = document.createElement('input');
+  cleanupInput.type = 'number';
+  cleanupInput.className = 'input-field';
+  cleanupInput.style.cssText = 'width:80px;';
+  cleanupInput.id = 'settings-cleanup-delay';
+  cleanupInput.value = saved.cleanupAfterSeconds || 300;
+  cleanupInput.min = '0';
+  cleanupGroup.appendChild(cleanupLabel);
+  cleanupGroup.appendChild(cleanupInput);
+  orchCard.appendChild(cleanupGroup);
+
+  // Debug mode toggle
+  const debugGroup = document.createElement('div');
+  debugGroup.style.cssText = 'margin-top:12px;display:flex;align-items:center;justify-content:space-between;padding:4px 0;';
+
+  const debugLabel = document.createElement('span');
+  debugLabel.style.cssText = 'font-size:13px;color:var(--text-primary);';
+  debugLabel.textContent = '调试模式（保留中间文件）';
+
+  const debugCb = document.createElement('input');
+  debugCb.type = 'checkbox';
+  debugCb.dataset.field = 'debugKeepIntermediates';
+  debugCb.checked = !!saved.debugKeepIntermediates;
+  debugCb.style.accentColor = 'var(--color-primary)';
+  debugCb.style.width = '16px';
+  debugCb.style.height = '16px';
+  debugCb.style.cursor = 'pointer';
+  debugGroup.appendChild(debugLabel);
+  debugGroup.appendChild(debugCb);
+  orchCard.appendChild(debugGroup);
+
+  wrapper.appendChild(orchCard);
+
   const prefHeader = document.createElement('div');
   prefHeader.className = 'card-header';
   prefHeader.innerHTML = `<span class="card-title">应用偏好</span>`;
@@ -149,7 +279,6 @@ export function renderSettingsPanel({ container, app }) {
 
       const url = urlInput.value.trim();
       try {
-        // We use a direct fetch to test the URL without changing the client
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5000);
         const resp = await fetch(`${url}/system_stats`, { signal: controller.signal });
@@ -172,6 +301,43 @@ export function renderSettingsPanel({ container, app }) {
       return;
     }
 
+    // Test orchestrator connection
+    const orchBtn = e.target.closest('[data-action="test-orchestrator"]');
+    if (orchBtn) {
+      orchBtn.disabled = true;
+      orchBtn.textContent = '测试中...';
+      orchTestResult.textContent = '';
+      orchTestResult.style.color = '';
+
+      const url = orchInput.value.trim();
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+        const resp = await fetch(`${url}/api/health`, { signal: controller.signal });
+        clearTimeout(timeout);
+
+        if (resp.ok) {
+          const data = await resp.json();
+          orchTestResult.textContent = `连接成功！(SQLite: ${data.sqlite}, ComfyUI: ${data.comfyui}, ffmpeg: ${data.ffmpeg})`;
+          orchTestResult.style.color = 'var(--color-success)';
+        } else {
+          orchTestResult.textContent = `连接失败: HTTP ${resp.status}`;
+          orchTestResult.style.color = 'var(--color-error)';
+        }
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          orchTestResult.textContent = '连接超时：请确认编排服务已启动且地址正确';
+        } else {
+          orchTestResult.textContent = `连接失败: ${err.message || '无法连接'}`;
+        }
+        orchTestResult.style.color = 'var(--color-error)';
+      } finally {
+        orchBtn.disabled = false;
+        orchBtn.textContent = '测试连接';
+      }
+      return;
+    }
+
     // Save settings
     const saveAction = e.target.closest('[data-action="save-settings"]');
     if (saveAction) {
@@ -179,6 +345,11 @@ export function renderSettingsPanel({ container, app }) {
       const settings = {
         comfyBaseUrl: url,
         sidebarCollapsed: sidebarCb.checked,
+        orchestratorBaseUrl: orchInput.value.trim(),
+        defaultOutputDir: outputInput.value.trim(),
+        executionMode: modeSelect.value,
+        cleanupAfterSeconds: parseInt(cleanupInput.value) || 300,
+        debugKeepIntermediates: debugCb.checked,
       };
 
       storage.set('settings', settings);
