@@ -1,0 +1,7 @@
+INFO:     Will watch for changes in these directories: ['F:\\codePro\\AIPro\\comfyUI-workflow']
+INFO:     Uvicorn running on http://0.0.0.0:18688 (Press CTRL+C to quit)
+INFO:     Started reloader process [2004] using WatchFiles
+INFO:     Started server process [2300]
+INFO:     Waiting for application startup.
+[2026-04-20 16:04:05,816] INFO main: Starting CreatorFlow Orchestrator on 0.0.0.0:18688
+INFO:     Application startup complete.
