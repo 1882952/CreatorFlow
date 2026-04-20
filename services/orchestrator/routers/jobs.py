@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
 
 from config import settings
 from models.schemas import (
@@ -158,12 +158,25 @@ async def get_job(job_id: str) -> JobDetailResponse:
 
 
 @router.post("/jobs/{job_id}/start")
-async def start_job(job_id: str) -> dict:
-    """Start (queue) a job."""
+async def start_job(job_id: str, background_tasks: BackgroundTasks) -> dict:
+    """Start (queue) a job and launch execution in background."""
+    from main import execution_engine
+
     updated = job_service.update_job_status(job_id, "queued")
     if not updated:
         raise HTTPException(status_code=404, detail="Job not found")
+
+    # Launch execution engine as a background task
+    background_tasks.add_task(_run_execution, job_id)
+
     return {"jobId": job_id, "status": "queued"}
+
+
+async def _run_execution(job_id: str) -> None:
+    """Run the execution engine for a job (background task)."""
+    import asyncio
+    from main import execution_engine
+    await execution_engine.execute_job(job_id)
 
 
 # ── POST /api/jobs/{job_id}/cancel ─────────────────────────────────────────

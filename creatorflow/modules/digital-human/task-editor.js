@@ -778,6 +778,7 @@ export class TaskEditor {
         uploadedName: result.name,
         previewUrl: previewUrl,
         size: file.size,
+        file: file,  // Keep original File for orchestrator mode
       };
 
       if (kind === 'audio') updates.duration = duration;

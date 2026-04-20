@@ -279,15 +279,28 @@ class ExecutionEngine:
         if not output_filename:
             raise RuntimeError(f"No output video found for segment {index}")
 
+        # Step 7: Download output from ComfyUI to local work_dir
+        local_path = await self._comfyui.download_output(
+            output_filename, settings.work_dir,
+        )
+        logger.info("Segment %d: downloaded %s -> %s", index, output_filename, local_path)
+
         job_service.update_segment(seg_id,
             status=SegmentStatus.COMPLETED,
-            comfy_output_path=output_filename,
-        )
-        await self._broadcast(
-            segment_event(EventType.SEGMENT_COMPLETED, job_id, seg_id, index, outputPath=output_filename)
+            comfy_output_path=local_path,
         )
 
-        logger.info("Segment %d completed: %s", index, output_filename)
+        # Register segment video as artifact (cleanable)
+        job_service.create_artifact(
+            job_id, "segment_video", local_path,
+            segment_id=seg_id, source="comfyui_output",
+        )
+
+        await self._broadcast(
+            segment_event(EventType.SEGMENT_COMPLETED, job_id, seg_id, index, outputPath=local_path)
+        )
+
+        logger.info("Segment %d completed: %s (local: %s)", index, output_filename, local_path)
 
     async def _broadcast(self, event: dict) -> None:
         """Broadcast an event via the event manager."""

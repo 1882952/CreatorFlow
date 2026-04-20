@@ -87,6 +87,23 @@ class ComfyUIClient:
             params += f"&subfolder={subfolder}"
         return f"{self.base_url}/view?{params}"
 
+    async def download_output(self, filename: str, save_dir: str, subfolder: str = "", item_type: str = "output") -> str:
+        """Download an output file from ComfyUI /view endpoint to a local directory.
+
+        Returns the local file path.
+        """
+        url = self.get_view_url(filename, subfolder, item_type)
+        resp = await self._http.get(url, follow_redirects=True)
+        resp.raise_for_status()
+
+        from pathlib import Path
+        Path(save_dir).mkdir(parents=True, exist_ok=True)
+        local_path = str(Path(save_dir) / filename)
+        with open(local_path, "wb") as f:
+            f.write(resp.content)
+        logger.info("Downloaded %s -> %s (%d bytes)", filename, local_path, len(resp.content))
+        return local_path
+
     # -- WebSocket Monitoring ------------------------------------------------
 
     async def wait_for_execution(

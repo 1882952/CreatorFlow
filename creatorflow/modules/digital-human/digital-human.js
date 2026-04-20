@@ -17,6 +17,7 @@ import { TaskList } from './task-list.js';
 import { TaskEditor } from './task-editor.js';
 import { ExecutionMonitor } from './execution-monitor.js';
 import { TaskQueue } from '../../core/task-queue.js';
+import { OrchestratorClient } from '../../core/orchestrator-client.js';
 
 export class DigitalHumanModule {
   // ── App Context ──────────────────────────────────────────────
@@ -316,6 +317,64 @@ export class DigitalHumanModule {
           break;
       }
     });
+
+    // Orchestrator events (segment progress)
+    if (this.#app.orchestratorClient) {
+      this.#subscribe('orchestrator:job.failed', ({ jobId, error }) => {
+        const task = this.#tasks.find(t => t._orchJobId === jobId);
+        if (task) {
+          task.status = 'failed';
+          task.error = error;
+          this.#isRunning = false;
+          this.#renderAll();
+          this.#renderHeader();
+          this.#save();
+          this.#showToast(`任务失败: ${task.name}`, 'error');
+        }
+      });
+
+      this.#subscribe('orchestrator:job.completed', ({ jobId, finalVideoPath, totalDuration }) => {
+        const task = this.#tasks.find(t => t._orchJobId === jobId);
+        if (task) {
+          task.status = 'completed';
+          task.progress = 100;
+          task.progressLabel = '完成';
+          task.finalOutput = {
+            localPath: finalVideoPath,
+            duration: totalDuration,
+          };
+          this.#isRunning = false;
+          this.#renderAll();
+          this.#renderHeader();
+          this.#save();
+          this.#showToast(`任务完成: ${task.name}`, 'success');
+        }
+      });
+
+      this.#subscribe('orchestrator:segment.started', ({ jobId, index }) => {
+        const task = this.#tasks.find(t => t._orchJobId === jobId);
+        if (task) {
+          task.progressLabel = `分段 ${index + 1} 执行中...`;
+          this.#renderRightPanel();
+        }
+      });
+
+      this.#subscribe('orchestrator:segment.completed', ({ jobId, index }) => {
+        const task = this.#tasks.find(t => t._orchJobId === jobId);
+        if (task) {
+          task.progressLabel = `分段 ${index + 1} 完成`;
+          this.#renderRightPanel();
+        }
+      });
+
+      this.#subscribe('orchestrator:job.concatenating', ({ jobId }) => {
+        const task = this.#tasks.find(t => t._orchJobId === jobId);
+        if (task) {
+          task.progressLabel = '正在拼接视频...';
+          this.#renderRightPanel();
+        }
+      });
+    }
   }
 
   /**
@@ -540,6 +599,17 @@ export class DigitalHumanModule {
   }
 
   async #handleStart() {
+    const execMode = this.#app.storage?.get('settings', {}).executionMode || 'orchestrated';
+    const orchClient = this.#app.orchestratorClient;
+
+    if (execMode === 'orchestrated' && orchClient) {
+      await this.#handleStartOrchestrated(orchClient);
+    } else {
+      await this.#handleStartDirect();
+    }
+  }
+
+  async #handleStartDirect() {
     // Validate all selected tasks
     const selectedTasks = this.#tasks.filter(t => t.selected);
     const invalidTasks = selectedTasks.filter(t => {
@@ -558,17 +628,11 @@ export class DigitalHumanModule {
       return;
     }
 
-    // Ensure all selected tasks are in 'ready' state
     for (const task of selectedTasks) {
-      if (task.status === 'draft') {
-        validateTask(task);
-      }
+      if (task.status === 'draft') validateTask(task);
     }
 
-    // Update task list to reflect any status changes
     this.#renderTaskList();
-
-    // Start queue execution
     this.#taskQueue.setTasks(this.#tasks);
     try {
       await this.#taskQueue.start();
@@ -576,6 +640,84 @@ export class DigitalHumanModule {
       console.error('[DigitalHuman] Queue start error:', err);
       this.#showToast(`执行失败: ${err.message}`, 'error');
     }
+  }
+
+  async #handleStartOrchestrated(orchClient) {
+    const selectedTasks = this.#tasks.filter(t => t.selected && t.validation.valid);
+    if (selectedTasks.length === 0) {
+      this.#showToast('没有已选中的有效任务', 'warning');
+      return;
+    }
+
+    // Submit each selected task to the orchestrator
+    for (const task of selectedTasks) {
+      try {
+        task.status = 'uploading';
+        task.progress = 0;
+        task.progressLabel = '提交中...';
+        this.#renderTaskList();
+        this.#renderRightPanel();
+
+        // Build form data
+        const formData = new FormData();
+        formData.append('name', task.name);
+        formData.append('prompt', task.prompt);
+        formData.append('seed', task.seed);
+        formData.append('fps', task.fps);
+        formData.append('max_resolution', task.maxResolution);
+        formData.append('segment_mode', task.segmentMode || 'auto');
+        formData.append('max_segment_duration', task.maxSegmentDuration || 8);
+
+        // Attach image file if available
+        if (task.image?.file) {
+          formData.append('image', task.image.file);
+        } else if (task.image?.previewUrl) {
+          // Fetch blob URL and attach
+          try {
+            const resp = await fetch(task.image.previewUrl);
+            const blob = await resp.blob();
+            const file = new File([blob], task.image.originalName || 'image.jpg', { type: blob.type });
+            formData.append('image', file);
+          } catch { /* skip */ }
+        }
+
+        // Attach audio file if available
+        if (task.audio?.file) {
+          formData.append('audio', task.audio.file);
+        } else if (task.audio?.previewUrl) {
+          try {
+            const resp = await fetch(task.audio.previewUrl);
+            const blob = await resp.blob();
+            const file = new File([blob], task.audio.originalName || 'audio.mp3', { type: blob.type });
+            formData.append('audio', file);
+          } catch { /* skip */ }
+        }
+
+        // Submit to orchestrator
+        const result = await orchClient.createJob(formData);
+        task._orchJobId = result.jobId;
+        task.status = 'queued';
+        task.progressLabel = '已入队';
+
+        // Start execution
+        await orchClient.startJob(result.jobId);
+        task.status = 'running';
+        task.progressLabel = '执行中...';
+
+        this.#showToast(`任务已提交: ${task.name}`, 'success');
+      } catch (err) {
+        console.error('[DigitalHuman] Orchestrator submit error:', err);
+        task.status = 'failed';
+        task.error = err.message;
+        this.#showToast(`提交失败: ${task.name} - ${err.message}`, 'error');
+      }
+    }
+
+    // Switch to running mode
+    this.#isRunning = true;
+    this.#renderHeader();
+    this.#renderRightPanel();
+    this.#save();
   }
 
   #handlePause() {

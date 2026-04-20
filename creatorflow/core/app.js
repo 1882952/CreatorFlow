@@ -6,6 +6,7 @@ import { Router } from './router.js';
 import { EventBus } from './event-bus.js';
 import { Storage } from './storage.js';
 import { ComfyUIClient } from './comfyui-client.js';
+import { OrchestratorClient } from './orchestrator-client.js';
 import { FileUploader } from './file-uploader.js';
 import digitalHumanModule from '../modules/digital-human/index.js';
 import settingsModule from '../modules/settings/index.js';
@@ -17,6 +18,7 @@ const appContext = {
   storage: null,
   rootEl: null,
   comfyClient: null,
+  orchestratorClient: null,
   fileUploader: null,
   _modules: new Map(),
   _activeModule: null,
@@ -190,6 +192,16 @@ async function init() {
 
   appContext.comfyClient = comfyClient;
   appContext.fileUploader = fileUploader;
+
+  // Init Orchestrator client if configured
+  const execMode = settings.executionMode || 'orchestrated';
+  const orchUrl = settings.orchestratorBaseUrl;
+  if (orchUrl && execMode !== 'direct') {
+    const orchClient = new OrchestratorClient({ baseUrl: orchUrl, eventBus });
+    appContext.orchestratorClient = orchClient;
+    orchClient.connect();
+    console.log('[App] Orchestrator client initialized:', orchUrl);
+  }
 
   // Event listeners for status bar updates
   eventBus.on('comfy:connection-changed', (state) => {

@@ -15,6 +15,7 @@ from config import settings
 from database import init_db
 from routers import health, jobs, upload
 from services.event_manager import EventManager
+from services.execution_engine import ExecutionEngine
 
 # ---------------------------------------------------------------------------
 # Logging setup
@@ -28,9 +29,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Global event manager (used for WebSocket broadcasts)
+# Global services
 # ---------------------------------------------------------------------------
 event_manager = EventManager()
+execution_engine = ExecutionEngine(event_manager)
 
 
 # ---------------------------------------------------------------------------

@@ -12,6 +12,8 @@ class Settings:
     port: int = field(default_factory=lambda: int(os.environ.get("ORCHESTRATOR_PORT", "18688")))
     host: str = field(default_factory=lambda: os.environ.get("ORCHESTRATOR_HOST", "0.0.0.0"))
     comfyui_url: str = field(default_factory=lambda: os.environ.get("COMFYUI_URL", "http://127.0.0.1:8188"))
+    comfyui_output_dir: str = field(default_factory=lambda: os.environ.get("COMFYUI_OUTPUT_DIR", ""))
+    comfyui_input_dir: str = field(default_factory=lambda: os.environ.get("COMFYUI_INPUT_DIR", ""))
     database_path: str = field(default_factory=lambda: os.environ.get("DATABASE_PATH", "data/orchestrator.db"))
     output_dir: str = field(default_factory=lambda: os.environ.get("OUTPUT_DIR", "data/output"))
     work_dir: str = field(default_factory=lambda: os.environ.get("WORK_DIR", "data/work"))
