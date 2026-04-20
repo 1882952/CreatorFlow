@@ -1,8 +1,9 @@
-INFO:     Will watch for changes in these directories: ['F:\\codePro\\AIPro\\comfyUI-workflow']
-INFO:     Uvicorn running on http://0.0.0.0:18688 (Press CTRL+C to quit)
-INFO:     Started reloader process [2004] using WatchFiles
-INFO:     Started server process [2300]
+INFO:     Started server process [25520]
 INFO:     Waiting for application startup.
-[2026-04-20 16:04:05,816] INFO main: Starting CreatorFlow Orchestrator on 0.0.0.0:18688
+[2026-04-20 17:06:27,221] INFO main: Starting CreatorFlow Orchestrator on 0.0.0.0:18688
 INFO:     Application startup complete.
-WARNING:  WatchFiles detected changes in 'services\orchestrator\main.py'. Reloading...
+ERROR:    [Errno 10048] error while attempting to bind on address ('0.0.0.0', 18688): 通常每个套接字地址(协议/网络地址/端口)只允许使用一次。
+INFO:     Waiting for application shutdown.
+[2026-04-20 17:06:27,231] INFO services.event_manager: EventManager closed; all clients cleared.
+[2026-04-20 17:06:27,231] INFO main: CreatorFlow Orchestrator shut down.
+INFO:     Application shutdown complete.

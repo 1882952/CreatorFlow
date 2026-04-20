@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import uuid
+from contextlib import suppress
 from pathlib import Path
 from typing import Any, Callable, Optional
 
@@ -147,14 +148,19 @@ class ComfyUIClient:
 
                     msg_type = msg.get("type", "")
                     data = msg.get("data", {})
+                    event_prompt_id = data.get("prompt_id")
 
                     if msg_type == "progress":
+                        if event_prompt_id != prompt_id:
+                            continue
                         value = data.get("value", 0)
                         max_val = data.get("max", 1)
                         if on_progress:
                             on_progress(value, max_val, None)
 
                     elif msg_type == "executing":
+                        if event_prompt_id != prompt_id:
+                            continue
                         node = data.get("node")
                         if node is None:
                             # Execution complete
@@ -164,17 +170,32 @@ class ComfyUIClient:
                             on_progress(None, None, node)
 
                     elif msg_type == "execution_error":
+                        if event_prompt_id != prompt_id:
+                            continue
                         result["status"] = "error"
                         result["error"] = data.get("exception_message", "Unknown error")
                         done.set()
 
                     elif msg_type == "execution_start":
+                        if event_prompt_id != prompt_id:
+                            continue
                         logger.info("Execution started for prompt %s", prompt_id)
 
+                    elif msg_type == "execution_complete":
+                        if event_prompt_id != prompt_id:
+                            continue
+                        result["status"] = "completed"
+                        done.set()
+
+            listener_task = asyncio.create_task(listener())
             try:
-                await asyncio.wait_for(listener(), timeout=timeout)
+                await asyncio.wait_for(done.wait(), timeout=timeout)
             except asyncio.TimeoutError:
                 raise TimeoutError(f"Execution timed out after {timeout}s for prompt {prompt_id}")
+            finally:
+                listener_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await listener_task
 
         if result["status"] == "error":
             raise RuntimeError(f"ComfyUI execution failed: {result.get('error', 'Unknown')}")
@@ -183,10 +204,11 @@ class ComfyUIClient:
         history = await self.get_history(prompt_id)
         return history.get(prompt_id, history)
 
-    async def extract_output_video(self, history: dict) -> Optional[str]:
-        """Extract the output video filename from execution history.
+    async def extract_output_video(self, history: dict) -> Optional[dict]:
+        """Extract output video metadata from execution history.
 
-        Looks for VHS_VideoCombine node output (node 1747).
+        Returns:
+            Dict with ``filename``, ``subfolder`` and ``type`` when found, else ``None``.
         """
         outputs = history.get("outputs", {})
         for node_id, node_output in outputs.items():
@@ -195,5 +217,9 @@ class ComfyUIClient:
                     for item in node_output[key]:
                         filename = item.get("filename", "")
                         if filename.endswith(".mp4"):
-                            return filename
+                            return {
+                                "filename": filename,
+                                "subfolder": item.get("subfolder", ""),
+                                "type": item.get("type", "output"),
+                            }
         return None

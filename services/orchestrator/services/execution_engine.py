@@ -210,7 +210,7 @@ class ExecutionEngine:
 
     async def _schedule_cleanup(self, job_id: str, job: dict) -> None:
         """Schedule intermediate file cleanup."""
-        delay = job.get("cleanup_after_seconds", settings.cleanup_default_delay)
+        delay = job.get("cleanup_after_seconds", settings.cleanup_default_delay_seconds)
         debug = job.get("cleanup_policy") == "debug"
 
         await self._broadcast(
@@ -275,15 +275,21 @@ class ExecutionEngine:
         history = await self._comfyui.wait_for_execution(prompt_id, on_progress=on_progress)
 
         # Step 6: Extract output
-        output_filename = await self._comfyui.extract_output_video(history)
-        if not output_filename:
+        output_info = await self._comfyui.extract_output_video(history)
+        if not output_info:
             raise RuntimeError(f"No output video found for segment {index}")
 
         # Step 7: Download output from ComfyUI to local work_dir
         local_path = await self._comfyui.download_output(
-            output_filename, settings.work_dir,
+            output_info["filename"],
+            settings.work_dir,
+            subfolder=output_info.get("subfolder", ""),
+            item_type=output_info.get("type", "output"),
         )
-        logger.info("Segment %d: downloaded %s -> %s", index, output_filename, local_path)
+        logger.info(
+            "Segment %d: downloaded %s -> %s",
+            index, output_info["filename"], local_path,
+        )
 
         job_service.update_segment(seg_id,
             status=SegmentStatus.COMPLETED,
@@ -300,7 +306,10 @@ class ExecutionEngine:
             segment_event(EventType.SEGMENT_COMPLETED, job_id, seg_id, index, outputPath=local_path)
         )
 
-        logger.info("Segment %d completed: %s (local: %s)", index, output_filename, local_path)
+        logger.info(
+            "Segment %d completed: %s (local: %s)",
+            index, output_info["filename"], local_path,
+        )
 
     async def _broadcast(self, event: dict) -> None:
         """Broadcast an event via the event manager."""

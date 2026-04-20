@@ -33,7 +33,7 @@ if not exist "%ROOT%logs" mkdir "%ROOT%logs"
 
 :: -- Start Orchestrator (port 18688) --
 echo [1/2] Starting orchestrator on port 18688 ...
-start /b "" python -m uvicorn main:app --host 0.0.0.0 --port 18688 --reload --app-dir "%ROOT%services\orchestrator" > "%ROOT%logs\orchestrator.log" 2>&1
+start /b "" python -m uvicorn main:app --host 0.0.0.0 --port 18688 --app-dir "%ROOT%services\orchestrator" > "%ROOT%logs\orchestrator.log" 2>&1
 
 :: -- Start Frontend (port 8080) --
 echo [2/2] Starting frontend on port 8080 ...
