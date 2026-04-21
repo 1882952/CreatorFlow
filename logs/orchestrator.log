@@ -1,9 +1,23 @@
-INFO:     Started server process [25520]
+INFO:     Started server process [22304]
 INFO:     Waiting for application startup.
-[2026-04-20 17:06:27,221] INFO main: Starting CreatorFlow Orchestrator on 0.0.0.0:18688
+[2026-04-21 14:19:48,509] INFO main: Starting CreatorFlow Orchestrator on 0.0.0.0:18688
+[2026-04-21 14:19:48,513] INFO services.job_queue: Job queue worker started
 INFO:     Application startup complete.
-ERROR:    [Errno 10048] error while attempting to bind on address ('0.0.0.0', 18688): 通常每个套接字地址(协议/网络地址/端口)只允许使用一次。
-INFO:     Waiting for application shutdown.
-[2026-04-20 17:06:27,231] INFO services.event_manager: EventManager closed; all clients cleared.
-[2026-04-20 17:06:27,231] INFO main: CreatorFlow Orchestrator shut down.
-INFO:     Application shutdown complete.
+INFO:     Uvicorn running on http://0.0.0.0:18688 (Press CTRL+C to quit)
+[2026-04-21 14:19:50,434] INFO httpx: HTTP Request: GET http://127.0.0.1:8188/system_stats "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:49888 - "GET /api/health HTTP/1.1" 200 OK
+[2026-04-21 14:20:03,904] INFO httpx: HTTP Request: GET http://127.0.0.1:8188/system_stats "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:49907 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     ('127.0.0.1', 49913) - "WebSocket /ws?clientId=8dd83593-33ee-40ab-b355-b52add1bd7cb" [accepted]
+[2026-04-21 14:20:03,944] INFO services.event_manager: WebSocket client connected. Total clients: 1
+[2026-04-21 14:20:03,944] INFO main: WebSocket client accepted.
+INFO:     connection open
+[2026-04-21 14:23:45,642] INFO httpx: HTTP Request: GET http://127.0.0.1:8188/system_stats "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:50206 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     ('127.0.0.1', 50212) - "WebSocket /ws?clientId=7fc2e05f-3dbe-4834-b8f8-48c161742858" [accepted]
+[2026-04-21 14:23:45,699] INFO services.event_manager: WebSocket client connected. Total clients: 2
+[2026-04-21 14:23:45,699] INFO main: WebSocket client accepted.
+INFO:     connection open
+[2026-04-21 14:23:50,260] INFO main: WebSocket client disconnected normally.
+[2026-04-21 14:23:50,260] INFO services.event_manager: WebSocket client disconnected. Total clients: 1
+INFO:     connection closed

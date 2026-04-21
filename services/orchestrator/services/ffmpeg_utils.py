@@ -13,13 +13,27 @@ def run_ffmpeg(*args: str, timeout: int = 120) -> subprocess.CompletedProcess:
     """Run an ffmpeg command and return the result."""
     cmd = ["ffmpeg", *args]
     logger.debug("Running: %s", " ".join(cmd))
-    return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    return subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=timeout,
+    )
 
 
 def run_ffprobe(filepath: str, *args: str, timeout: int = 30) -> str:
     """Run ffprobe and return stdout."""
     cmd = ["ffprobe", "-v", "quiet", *args, str(filepath)]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=timeout,
+    )
     if result.returncode != 0:
         raise RuntimeError(f"ffprobe failed for {filepath}: {result.stderr}")
     return result.stdout.strip()
@@ -177,7 +191,7 @@ def concat_videos(
     # Create concat list file
     with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8") as f:
         for vp in video_paths:
-            safe_path = str(vp).replace("\\", "/").replace("'", "'\\''")
+            safe_path = str(Path(vp).resolve()).replace("\\", "/").replace("'", "'\\''")
             f.write(f"file '{safe_path}'\n")
         concat_list = f.name
 

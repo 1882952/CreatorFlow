@@ -101,7 +101,7 @@ def get_segments(job_id: str) -> list[dict]:
     """Return all segments for a given job."""
     with get_connection() as conn:
         rows = conn.execute(
-            "SELECT * FROM segments WHERE job_id = ? ORDER BY index",
+            'SELECT * FROM segments WHERE job_id = ? ORDER BY "index"',
             (job_id,),
         ).fetchall()
     return [dict(r) for r in rows]
@@ -122,7 +122,7 @@ def create_segment(
         conn.execute(
             """
             INSERT INTO segments (
-                id, job_id, index, status, start_seconds, end_seconds,
+                id, job_id, "index", status, start_seconds, end_seconds,
                 duration_seconds, cut_reason
             ) VALUES (?, ?, ?, 'pending', ?, ?, ?, ?)
             """,
@@ -191,12 +191,47 @@ def create_artifact(
     return artifact_id
 
 
+def get_artifact(artifact_id: str) -> Optional[dict]:
+    """Return a single artifact as a dict, or None if not found."""
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM artifacts WHERE id = ?", (artifact_id,)).fetchone()
+    if row is None:
+        return None
+    return dict(row)
+
+
 def get_artifacts(job_id: str) -> list[dict]:
     """Return all artifacts for a given job."""
     with get_connection() as conn:
         rows = conn.execute(
             "SELECT * FROM artifacts WHERE job_id = ? ORDER BY created_at",
             (job_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def list_generated_assets() -> list[dict]:
+    """Return generated video assets across all jobs, newest jobs first."""
+    with get_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                a.*,
+                j.name AS job_name,
+                j.status AS job_status,
+                j.created_at AS job_created_at,
+                s."index" AS segment_index
+            FROM artifacts a
+            JOIN jobs j ON j.id = a.job_id
+            LEFT JOIN segments s ON s.id = a.segment_id
+            WHERE a.type IN ('final_video', 'segment_video')
+              AND COALESCE(a.cleanup_status, 'pending') != 'cleaned'
+            ORDER BY
+                j.created_at DESC,
+                CASE a.type WHEN 'final_video' THEN 0 ELSE 1 END,
+                COALESCE(s."index", -1),
+                a.created_at DESC
+            """
         ).fetchall()
     return [dict(r) for r in rows]
 
@@ -225,6 +260,33 @@ def update_artifact(artifact_id: str, **kwargs) -> bool:
         )
         conn.commit()
 
+    return True
+
+
+def delete_artifact(artifact_id: str) -> bool:
+    """Delete an artifact record and clear any linked output pointers."""
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM artifacts WHERE id = ?", (artifact_id,)).fetchone()
+        if row is None:
+            return False
+
+        artifact = dict(row)
+        conn.execute("DELETE FROM artifacts WHERE id = ?", (artifact_id,))
+
+        if artifact["type"] == "final_video":
+            conn.execute(
+                "UPDATE jobs SET final_video_path = NULL WHERE id = ? AND final_video_path = ?",
+                (artifact["job_id"], artifact["path"]),
+            )
+        elif artifact["type"] == "segment_video" and artifact.get("segment_id"):
+            conn.execute(
+                "UPDATE segments SET comfy_output_path = NULL WHERE id = ? AND comfy_output_path = ?",
+                (artifact["segment_id"], artifact["path"]),
+            )
+
+        conn.commit()
+
+    logger.info("Artifact deleted: id=%s path=%s", artifact_id, artifact["path"])
     return True
 
 

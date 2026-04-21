@@ -320,12 +320,48 @@ export class DigitalHumanModule {
 
     // Orchestrator events (segment progress)
     if (this.#app.orchestratorClient) {
+      this.#subscribe('orchestrator:job.queued', ({ jobId }) => {
+        const task = this.#tasks.find(t => t._orchJobId === jobId);
+        if (task) {
+          task.status = 'queued';
+          task.progressLabel = 'Queued';
+          this.#syncOrchestratedRunningState();
+          this.#renderAll();
+          this.#renderHeader();
+          this.#save();
+        }
+      });
+
+      this.#subscribe('orchestrator:job.preparing', ({ jobId }) => {
+        const task = this.#tasks.find(t => t._orchJobId === jobId);
+        if (task) {
+          task.status = 'running';
+          task.progressLabel = 'Preparing...';
+          this.#syncOrchestratedRunningState();
+          this.#renderAll();
+          this.#renderHeader();
+          this.#save();
+        }
+      });
+
+      this.#subscribe('orchestrator:job.started', ({ jobId }) => {
+        const task = this.#tasks.find(t => t._orchJobId === jobId);
+        if (task) {
+          task.status = 'running';
+          task.progressLabel = 'Running...';
+          this.#syncOrchestratedRunningState();
+          this.#renderAll();
+          this.#renderHeader();
+          this.#save();
+        }
+      });
+
       this.#subscribe('orchestrator:job.failed', ({ jobId, error }) => {
         const task = this.#tasks.find(t => t._orchJobId === jobId);
         if (task) {
           task.status = 'failed';
           task.error = error;
-          this.#isRunning = false;
+          this.#syncOrchestratedRunningState();
           this.#renderAll();
           this.#renderHeader();
           this.#save();
@@ -343,7 +379,7 @@ export class DigitalHumanModule {
             localPath: finalVideoPath,
             duration: totalDuration,
           };
-          this.#isRunning = false;
+          this.#syncOrchestratedRunningState();
           this.#renderAll();
           this.#renderHeader();
           this.#save();
@@ -705,6 +741,8 @@ export class DigitalHumanModule {
         task.progressLabel = '执行中...';
 
         this.#showToast(`任务已提交: ${task.name}`, 'success');
+        task.status = 'queued';
+        task.progressLabel = 'Queued';
       } catch (err) {
         console.error('[DigitalHuman] Orchestrator submit error:', err);
         task.status = 'failed';
@@ -808,10 +846,15 @@ export class DigitalHumanModule {
    * @returns {number} -1 if no task is currently running
    */
   #getCurrentTaskIndex() {
+    const runningIdx = this.#tasks.findIndex(t => t.status === 'running');
+    if (runningIdx !== -1) return runningIdx;
+
+    if (this.#isRunning) {
+      return this.#tasks.findIndex(t => ['queued', 'uploading'].includes(t.status));
+    }
+
     if (!this.#taskQueue || !this.#taskQueue.isRunning) return -1;
-    // Find the first running task
-    const idx = this.#tasks.findIndex(t => t.status === 'running');
-    return idx;
+    return -1;
   }
 
   // ── Persistence ─────────────────────────────────────────────
@@ -960,5 +1003,11 @@ export class DigitalHumanModule {
       queueRunning: running,
       queueTotal: total,
     });
+  }
+
+  #syncOrchestratedRunningState() {
+    this.#isRunning = this.#tasks.some(t =>
+      ['queued', 'running', 'uploading'].includes(t.status)
+    );
   }
 }

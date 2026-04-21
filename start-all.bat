@@ -31,6 +31,13 @@ if not exist "%ROOT%services\orchestrator\__pycache__" (
 :: -- Create logs dir --
 if not exist "%ROOT%logs" mkdir "%ROOT%logs"
 
+:: -- Ensure ports are free before start --
+echo [0/2] Checking existing services ...
+call :ensure_port_free 18688 orchestrator
+if %errorlevel% neq 0 exit /b 1
+call :ensure_port_free 8080 frontend
+if %errorlevel% neq 0 exit /b 1
+
 :: -- Start Orchestrator (port 18688) --
 echo [1/2] Starting orchestrator on port 18688 ...
 start /b "" python -m uvicorn main:app --host 0.0.0.0 --port 18688 --app-dir "%ROOT%services\orchestrator" > "%ROOT%logs\orchestrator.log" 2>&1
@@ -48,7 +55,7 @@ curl -s --max-time 5 http://localhost:18688/api/health >nul 2>&1
 if %errorlevel% equ 0 (
     echo [OK] Orchestrator : http://localhost:18688
 ) else (
-    echo [..] Orchestrator starting, visit later: http://localhost:18688
+echo [..] Orchestrator starting, visit later: http://localhost:18688
 )
 echo [OK] Frontend      : http://localhost:8080
 
@@ -67,3 +74,18 @@ echo.
 echo Services running. Press any key to STOP all services ...
 pause >nul
 call "%ROOT%stop-all.bat"
+exit /b 0
+
+:ensure_port_free
+set "PORT=%~1"
+set "LABEL=%~2"
+netstat -ano -p tcp 2>nul | findstr "LISTENING" | findstr ":%PORT%" >nul
+if errorlevel 1 exit /b 0
+
+echo     Port %PORT% already in use. Stopping existing %LABEL% service ...
+call "%ROOT%stop-all.bat" --no-pause >nul
+netstat -ano -p tcp 2>nul | findstr "LISTENING" | findstr ":%PORT%" >nul
+if errorlevel 1 exit /b 0
+
+echo [ERROR] Port %PORT% is still occupied after cleanup. Please check the old %LABEL% process manually.
+exit /b 1

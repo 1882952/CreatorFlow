@@ -13,9 +13,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from database import init_db
-from routers import health, jobs, upload
+from routers import assets, health, jobs, upload
 from services.event_manager import EventManager
 from services.execution_engine import ExecutionEngine
+from services.job_queue import JobQueueManager
 
 # ---------------------------------------------------------------------------
 # Logging setup
@@ -33,6 +34,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 event_manager = EventManager()
 execution_engine = ExecutionEngine(event_manager)
+job_queue = JobQueueManager(execution_engine)
 
 
 # ---------------------------------------------------------------------------
@@ -47,7 +49,9 @@ async def lifespan(app: FastAPI):
         settings.port,
     )
     init_db()
+    await job_queue.start()
     yield
+    await job_queue.stop()
     event_manager.close()
     logger.info("CreatorFlow Orchestrator shut down.")
 
@@ -73,6 +77,7 @@ app.add_middleware(
 # Routers
 app.include_router(health.router, prefix="/api")
 app.include_router(jobs.router, prefix="/api")
+app.include_router(assets.router, prefix="/api")
 app.include_router(upload.router, prefix="/api")
 
 

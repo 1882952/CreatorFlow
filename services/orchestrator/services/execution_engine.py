@@ -39,9 +39,12 @@ class ExecutionEngine:
 
     def __init__(self, event_manager):
         self._event_manager = event_manager
-        self._comfyui = None
         self._cleanup_manager = CleanupManager()
         self._running_jobs: set[str] = set()
+
+    def is_running(self, job_id: str) -> bool:
+        """Check whether a job is currently executing."""
+        return job_id in self._running_jobs
 
     async def execute_job(self, job_id: str) -> None:
         """Execute a job to completion (or failure)."""
@@ -50,19 +53,19 @@ class ExecutionEngine:
             return
 
         self._running_jobs.add(job_id)
-        self._comfyui = ComfyUIClient(settings.comfyui_url)
+        comfyui = ComfyUIClient(settings.comfyui_url)
 
         try:
-            await self._run_pipeline(job_id)
+            await self._run_pipeline(job_id, comfyui)
         except Exception as e:
             logger.exception("Job %s failed", job_id)
             job_service.update_job_status(job_id, JobStatus.FAILED, last_error=str(e))
             await self._broadcast(job_event(EventType.JOB_FAILED, job_id, error=str(e)))
         finally:
             self._running_jobs.discard(job_id)
-            await self._comfyui.close()
+            await comfyui.close()
 
-    async def _run_pipeline(self, job_id: str) -> None:
+    async def _run_pipeline(self, job_id: str, comfyui: ComfyUIClient) -> None:
         """Run the full execution pipeline."""
         # Load job
         job = job_service.get_job(job_id)
@@ -139,7 +142,7 @@ class ExecutionEngine:
 
                 await self._execute_segment(
                     job_id, seg_id, index, seg,
-                    source_image_path, template, job,
+                    source_image_path, template, job, comfyui,
                 )
 
                 # Update prev_output_path for next segment
@@ -224,6 +227,7 @@ class ExecutionEngine:
     async def _execute_segment(
         self, job_id: str, seg_id: str, index: int,
         seg: dict, image_path: str, template: dict, job: dict,
+        comfyui: ComfyUIClient,
     ) -> None:
         """Execute a single segment through ComfyUI."""
 
@@ -233,11 +237,11 @@ class ExecutionEngine:
             segment_event(EventType.SEGMENT_UPLOADING, job_id, seg_id, index)
         )
 
-        uploaded_image = await self._comfyui.upload_image(image_path)
+        uploaded_image = await comfyui.upload_image(image_path)
 
         # Step 2: Upload audio
         audio_path = seg.get("audio_segment_path") or job["input_audio_path"]
-        uploaded_audio = await self._comfyui.upload_image(audio_path)
+        uploaded_audio = await comfyui.upload_image(audio_path)
 
         # Step 3: Build workflow
         duration = min(math.ceil(seg["duration_seconds"]), settings.hard_max_duration)
@@ -250,7 +254,7 @@ class ExecutionEngine:
 
         # Step 4: Submit
         job_service.update_segment(seg_id, status=SegmentStatus.SUBMITTED)
-        prompt_id = await self._comfyui.submit_prompt(workflow)
+        prompt_id = await comfyui.submit_prompt(workflow)
         job_service.update_segment(seg_id, comfy_prompt_id=prompt_id)
         await self._broadcast(
             segment_event(EventType.SEGMENT_SUBMITTED, job_id, seg_id, index, promptId=prompt_id)
@@ -272,15 +276,15 @@ class ExecutionEngine:
             except RuntimeError:
                 pass
 
-        history = await self._comfyui.wait_for_execution(prompt_id, on_progress=on_progress)
+        history = await comfyui.wait_for_execution(prompt_id, on_progress=on_progress)
 
         # Step 6: Extract output
-        output_info = await self._comfyui.extract_output_video(history)
+        output_info = await comfyui.extract_output_video(history)
         if not output_info:
             raise RuntimeError(f"No output video found for segment {index}")
 
         # Step 7: Download output from ComfyUI to local work_dir
-        local_path = await self._comfyui.download_output(
+        local_path = await comfyui.download_output(
             output_info["filename"],
             settings.work_dir,
             subfolder=output_info.get("subfolder", ""),

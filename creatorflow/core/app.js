@@ -8,6 +8,7 @@ import { Storage } from './storage.js';
 import { ComfyUIClient } from './comfyui-client.js';
 import { OrchestratorClient } from './orchestrator-client.js';
 import { FileUploader } from './file-uploader.js';
+import assetsModule from '../modules/assets/index.js';
 import digitalHumanModule from '../modules/digital-human/index.js';
 import settingsModule from '../modules/settings/index.js';
 
@@ -173,6 +174,7 @@ async function init() {
   initNavigation();
 
   // Register real modules
+  registerModule(assetsModule);
   registerModule(digitalHumanModule);
   registerModule(settingsModule);
 

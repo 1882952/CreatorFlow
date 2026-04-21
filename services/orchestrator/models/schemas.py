@@ -97,6 +97,34 @@ class ArtifactListResponse(BaseModel):
     total: int
 
 
+class AssetItemResponse(BaseModel):
+    """Schema returned by the asset overview endpoint."""
+
+    id: str
+    job_id: str
+    job_name: str
+    job_status: str
+    type: str
+    segment_id: Optional[str] = None
+    segment_index: Optional[int] = None
+    filename: str
+    path: str
+    size: int
+    exists: bool
+    created_at: str
+    cleanup_status: str
+    preview_url: str
+    download_url: str
+    delete_url: str
+
+
+class AssetListResponse(BaseModel):
+    """Schema for listing generated assets across jobs."""
+
+    assets: list[AssetItemResponse]
+    total: int
+
+
 class HealthResponse(BaseModel):
     """Schema for the health-check endpoint."""
 

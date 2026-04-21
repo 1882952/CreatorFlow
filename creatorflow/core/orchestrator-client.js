@@ -209,6 +209,23 @@ export class OrchestratorClient {
   }
 
   /**
+   * List generated output assets across all jobs.
+   * @returns {Promise<object>} Asset list payload
+   */
+  async listAssets() {
+    return this.#request('/api/assets', { timeout: 15000 });
+  }
+
+  /**
+   * Delete a generated asset.
+   * @param {string} artifactId - Asset identifier
+   * @returns {Promise<object>} Delete result
+   */
+  async deleteAsset(artifactId) {
+    return this.#request(`/api/assets/${artifactId}`, { method: 'DELETE' });
+  }
+
+  /**
    * Upload a file to the orchestrator service.
    * @param {File} file - File object to upload
    * @returns {Promise<object>} Upload response with file identifier

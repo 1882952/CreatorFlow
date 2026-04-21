@@ -6,9 +6,10 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from config import settings
+from models.events import EventType, job_event
 from models.schemas import (
     ArtifactListResponse,
     ArtifactResponse,
@@ -158,25 +159,21 @@ async def get_job(job_id: str) -> JobDetailResponse:
 
 
 @router.post("/jobs/{job_id}/start")
-async def start_job(job_id: str, background_tasks: BackgroundTasks) -> dict:
-    """Start (queue) a job and launch execution in background."""
-    from main import execution_engine
+async def start_job(job_id: str) -> dict:
+    """Queue a job for serial background execution."""
+    from main import event_manager, job_queue
 
     updated = job_service.update_job_status(job_id, "queued")
     if not updated:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    # Launch execution engine as a background task
-    background_tasks.add_task(_run_execution, job_id)
+    await job_queue.enqueue(job_id)
+    await event_manager.broadcast(
+        EventType.JOB_QUEUED,
+        job_event(EventType.JOB_QUEUED, job_id)["data"],
+    )
 
     return {"jobId": job_id, "status": "queued"}
-
-
-async def _run_execution(job_id: str) -> None:
-    """Run the execution engine for a job (background task)."""
-    import asyncio
-    from main import execution_engine
-    await execution_engine.execute_job(job_id)
 
 
 # ── POST /api/jobs/{job_id}/cancel ─────────────────────────────────────────
@@ -197,9 +194,18 @@ async def cancel_job(job_id: str) -> dict:
 @router.post("/jobs/{job_id}/retry")
 async def retry_job(job_id: str) -> dict:
     """Retry a failed job."""
+    from main import event_manager, job_queue
+
     updated = job_service.update_job_status(job_id, "queued")
     if not updated:
         raise HTTPException(status_code=404, detail="Job not found")
+
+    await job_queue.enqueue(job_id)
+    await event_manager.broadcast(
+        EventType.JOB_QUEUED,
+        job_event(EventType.JOB_QUEUED, job_id)["data"],
+    )
+
     return {"jobId": job_id, "status": "queued"}
 
 
