@@ -226,6 +226,21 @@ export class OrchestratorClient {
   }
 
   /**
+   * Delete multiple generated assets.
+   * @param {string[]} assetIds - Asset identifiers
+   * @returns {Promise<object>} Batch delete result
+   */
+  async batchDeleteAssets(assetIds) {
+    return this.#request('/api/assets/batch-delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ids: assetIds }),
+    });
+  }
+
+  /**
    * Upload a file to the orchestrator service.
    * @param {File} file - File object to upload
    * @returns {Promise<object>} Upload response with file identifier

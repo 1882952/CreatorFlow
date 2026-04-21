@@ -5,12 +5,15 @@ from __future__ import annotations
 import logging
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 
+from config import resolve_app_path
 from database import get_connection
 from models.schemas import JobCreate
 
 logger = logging.getLogger(__name__)
+VIDEO_EXTENSIONS = {".mp4", ".mov", ".m4v", ".webm", ".mkv"}
 
 
 def create_job(data: JobCreate, input_image_path: Optional[str] = None, input_audio_path: Optional[str] = None) -> str:
@@ -298,3 +301,173 @@ def get_artifacts_by_cleanup_status(cleanup_status: str) -> list[dict]:
             (cleanup_status,),
         ).fetchall()
     return [dict(r) for r in rows]
+
+
+def _resolve_storage_path(path_str: str) -> Path:
+    """Resolve a stored path relative to the repository root."""
+    return resolve_app_path(path_str)
+
+
+def _path_key(path_str: Optional[str]) -> Optional[str]:
+    """Return a normalized absolute-path string for matching records."""
+    if not path_str:
+        return None
+    return str(_resolve_storage_path(path_str))
+
+
+def resolve_output_asset_path(output_dir: str, asset_id: str) -> Path:
+    """Resolve a frontend asset id to a file inside the configured output directory."""
+    output_root = _resolve_storage_path(output_dir)
+    candidate = (output_root / asset_id).resolve()
+    try:
+        candidate.relative_to(output_root)
+    except ValueError as exc:
+        raise ValueError("Asset path is outside the output directory") from exc
+    return candidate
+
+
+def list_output_assets(output_dir: str) -> list[dict]:
+    """List final generated videos that currently exist in the output directory."""
+    output_root = _resolve_storage_path(output_dir)
+    output_root.mkdir(parents=True, exist_ok=True)
+
+    files = [
+        path.resolve()
+        for path in output_root.iterdir()
+        if path.is_file() and path.suffix.lower() in VIDEO_EXTENSIONS
+    ]
+
+    with get_connection() as conn:
+        job_rows = conn.execute(
+            """
+            SELECT id, name, status, final_video_path
+            FROM jobs
+            WHERE final_video_path IS NOT NULL
+            """
+        ).fetchall()
+        artifact_rows = conn.execute(
+            """
+            SELECT id, job_id, path, created_at, cleanup_status
+            FROM artifacts
+            WHERE type = 'final_video'
+            ORDER BY created_at DESC
+            """
+        ).fetchall()
+
+    jobs_by_path: dict[str, dict] = {}
+    for row in job_rows:
+        key = _path_key(row["final_video_path"])
+        if key:
+            jobs_by_path[key] = dict(row)
+
+    artifacts_by_path: dict[str, dict] = {}
+    for row in artifact_rows:
+        key = _path_key(row["path"])
+        if key and key not in artifacts_by_path:
+            artifacts_by_path[key] = dict(row)
+
+    assets: list[dict] = []
+    for file_path in sorted(files, key=lambda item: item.stat().st_mtime, reverse=True):
+        stat = file_path.stat()
+        key = str(file_path)
+        job = jobs_by_path.get(key)
+        artifact = artifacts_by_path.get(key)
+
+        assets.append(
+            {
+                "id": file_path.name,
+                "job_id": job["id"] if job else "",
+                "job_name": job["name"] if job and job.get("name") else file_path.stem,
+                "job_status": job["status"] if job and job.get("status") else "available",
+                "type": "final_video",
+                "segment_id": None,
+                "segment_index": None,
+                "filename": file_path.name,
+                "path": str(file_path),
+                "size": stat.st_size,
+                "exists": True,
+                "created_at": artifact["created_at"]
+                if artifact and artifact.get("created_at")
+                else datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
+                "cleanup_status": artifact["cleanup_status"]
+                if artifact and artifact.get("cleanup_status")
+                else "keep",
+            }
+        )
+
+    return assets
+
+
+def delete_output_asset(output_dir: str, asset_id: str) -> bool:
+    """Delete a final output file and clear matching database metadata."""
+    target = resolve_output_asset_path(output_dir, asset_id)
+    target_key = str(target)
+    deleted = False
+
+    if target.exists():
+        target.unlink()
+        deleted = True
+
+    with get_connection() as conn:
+        artifact_rows = conn.execute(
+            """
+            SELECT id, path
+            FROM artifacts
+            WHERE type = 'final_video'
+            """
+        ).fetchall()
+        artifact_ids = [
+            row["id"]
+            for row in artifact_rows
+            if _path_key(row["path"]) == target_key
+        ]
+        for artifact_id in artifact_ids:
+            conn.execute("DELETE FROM artifacts WHERE id = ?", (artifact_id,))
+            deleted = True
+
+        job_rows = conn.execute(
+            """
+            SELECT id, final_video_path
+            FROM jobs
+            WHERE final_video_path IS NOT NULL
+            """
+        ).fetchall()
+        job_ids = [
+            row["id"]
+            for row in job_rows
+            if _path_key(row["final_video_path"]) == target_key
+        ]
+        for job_id in job_ids:
+            conn.execute(
+                "UPDATE jobs SET final_video_path = NULL WHERE id = ?",
+                (job_id,),
+            )
+            deleted = True
+
+        conn.commit()
+
+    if deleted:
+        logger.info("Output asset deleted: id=%s path=%s", asset_id, target_key)
+    return deleted
+
+
+def batch_delete_output_assets(output_dir: str, asset_ids: list[str]) -> dict:
+    """Delete multiple final output assets."""
+    deleted: list[str] = []
+    not_found: list[str] = []
+    locked: list[str] = []
+
+    for asset_id in dict.fromkeys(asset_ids):
+        try:
+            removed = delete_output_asset(output_dir, asset_id)
+        except PermissionError:
+            locked.append(asset_id)
+            continue
+        except ValueError:
+            removed = False
+        if removed:
+            deleted.append(asset_id)
+        else:
+            not_found.append(asset_id)
+
+    return {"deleted": deleted, "not_found": not_found, "locked": locked}

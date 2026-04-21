@@ -1,4 +1,4 @@
-import { AssetsModule } from './assets-page.js';
+import { AssetsModule } from './assets-page.js?v=20260421-asset-client-fix';
 
 export default {
   id: 'assets',

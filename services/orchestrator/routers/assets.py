@@ -1,69 +1,65 @@
-"""Asset overview router for generated local outputs."""
+"""Asset overview router for final generated videos in the output directory."""
 
 from __future__ import annotations
 
 import mimetypes
-from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
 
-from models.schemas import AssetItemResponse, AssetListResponse
+from config import settings
+from models.schemas import AssetBatchDeleteRequest, AssetItemResponse, AssetListResponse
 from services import job_service
 
 router = APIRouter(tags=["assets"])
 
 
-def _resolve_path(path_str: str) -> Path:
-    """Resolve an artifact path relative to the current process root when needed."""
-    path = Path(path_str)
-    if path.is_absolute():
-        return path
-    return (Path.cwd() / path).resolve()
-
-
-def _to_asset_item(request: Request, artifact: dict) -> AssetItemResponse:
-    """Convert a raw artifact row into a frontend-ready asset payload."""
-    resolved = _resolve_path(artifact["path"])
-    exists = resolved.exists()
-    size = resolved.stat().st_size if exists else 0
-
+def _to_asset_item(request: Request, asset: dict) -> AssetItemResponse:
+    """Convert an output-file record into a frontend-ready asset payload."""
     return AssetItemResponse(
-        id=artifact["id"],
-        job_id=artifact["job_id"],
-        job_name=artifact.get("job_name") or artifact["job_id"],
-        job_status=artifact.get("job_status") or "unknown",
-        type=artifact["type"],
-        segment_id=artifact.get("segment_id"),
-        segment_index=artifact.get("segment_index"),
-        filename=resolved.name,
-        path=str(resolved),
-        size=size,
-        exists=exists,
-        created_at=artifact["created_at"],
-        cleanup_status=artifact.get("cleanup_status", "pending"),
-        preview_url=str(request.url_for("get_asset_content", artifact_id=artifact["id"])),
-        download_url=str(request.url_for("download_asset", artifact_id=artifact["id"])),
-        delete_url=str(request.url_for("delete_asset", artifact_id=artifact["id"])),
+        id=asset["id"],
+        job_id=asset.get("job_id") or "",
+        job_name=asset.get("job_name") or asset["filename"],
+        job_status=asset.get("job_status") or "available",
+        type=asset.get("type") or "final_video",
+        segment_id=None,
+        segment_index=None,
+        filename=asset["filename"],
+        path=asset["path"],
+        size=asset["size"],
+        exists=asset.get("exists", True),
+        created_at=asset["created_at"],
+        cleanup_status=asset.get("cleanup_status", "keep"),
+        preview_url=str(request.url_for("get_asset_content", asset_id=asset["id"])),
+        download_url=str(request.url_for("download_asset", asset_id=asset["id"])),
+        delete_url=str(request.url_for("delete_asset", asset_id=asset["id"])),
     )
 
 
 @router.get("/assets", response_model=AssetListResponse)
 async def list_assets(request: Request) -> AssetListResponse:
-    """List generated video assets across all jobs."""
-    rows = job_service.list_generated_assets()
+    """List final generated videos from the configured output directory."""
+    rows = job_service.list_output_assets(settings.output_dir)
     assets = [_to_asset_item(request, row) for row in rows]
     return AssetListResponse(assets=assets, total=len(assets))
 
 
-@router.get("/assets/{artifact_id}/content", name="get_asset_content")
-async def get_asset_content(artifact_id: str) -> FileResponse:
-    """Return the raw asset file for inline preview."""
-    artifact = job_service.get_artifact(artifact_id)
-    if artifact is None:
-        raise HTTPException(status_code=404, detail="Asset not found")
+@router.post("/assets/batch-delete")
+async def batch_delete_assets(payload: AssetBatchDeleteRequest) -> dict:
+    """Delete multiple final generated videos."""
+    if not payload.ids:
+        return {"deleted": [], "not_found": [], "locked": []}
+    return job_service.batch_delete_output_assets(settings.output_dir, payload.ids)
 
-    path = _resolve_path(artifact["path"])
+
+@router.get("/assets/{asset_id}/content", name="get_asset_content")
+async def get_asset_content(asset_id: str) -> FileResponse:
+    """Return the raw asset file for inline preview."""
+    try:
+        path = job_service.resolve_output_asset_path(settings.output_dir, asset_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     if not path.exists():
         raise HTTPException(status_code=404, detail="Asset file not found")
 
@@ -71,14 +67,14 @@ async def get_asset_content(artifact_id: str) -> FileResponse:
     return FileResponse(path, media_type=media_type or "application/octet-stream")
 
 
-@router.get("/assets/{artifact_id}/download", name="download_asset")
-async def download_asset(artifact_id: str) -> FileResponse:
+@router.get("/assets/{asset_id}/download", name="download_asset")
+async def download_asset(asset_id: str) -> FileResponse:
     """Download an asset file with attachment headers."""
-    artifact = job_service.get_artifact(artifact_id)
-    if artifact is None:
-        raise HTTPException(status_code=404, detail="Asset not found")
+    try:
+        path = job_service.resolve_output_asset_path(settings.output_dir, asset_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    path = _resolve_path(artifact["path"])
     if not path.exists():
         raise HTTPException(status_code=404, detail="Asset file not found")
 
@@ -90,16 +86,20 @@ async def download_asset(artifact_id: str) -> FileResponse:
     )
 
 
-@router.delete("/assets/{artifact_id}", name="delete_asset")
-async def delete_asset(artifact_id: str) -> dict:
-    """Delete a generated asset file and remove its record."""
-    artifact = job_service.get_artifact(artifact_id)
-    if artifact is None:
+@router.delete("/assets/{asset_id}", name="delete_asset")
+async def delete_asset(asset_id: str) -> dict:
+    """Delete a final generated video from the output directory."""
+    try:
+        deleted = job_service.delete_output_asset(settings.output_dir, asset_id)
+    except PermissionError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail="Asset file is currently in use. Stop preview playback and retry.",
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    if not deleted:
         raise HTTPException(status_code=404, detail="Asset not found")
 
-    path = _resolve_path(artifact["path"])
-    if path.exists():
-        path.unlink()
-
-    job_service.delete_artifact(artifact_id)
-    return {"artifactId": artifact_id, "deleted": True}
+    return {"assetId": asset_id, "deleted": True}

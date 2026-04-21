@@ -82,6 +82,9 @@
   transition: all var(--transition-fast);
   white-space: nowrap;
   user-select: none;
+  text-decoration: none;
+  border: none;
+  background: transparent;
 }
 
 .nav-item:hover {

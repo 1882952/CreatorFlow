@@ -125,6 +125,12 @@ class AssetListResponse(BaseModel):
     total: int
 
 
+class AssetBatchDeleteRequest(BaseModel):
+    """Request body for batch deleting output assets."""
+
+    ids: list[str] = Field(default_factory=list)
+
+
 class HealthResponse(BaseModel):
     """Schema for the health-check endpoint."""
 

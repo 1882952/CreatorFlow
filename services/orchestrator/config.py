@@ -5,6 +5,17 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def resolve_app_path(path_str: str) -> Path:
+    """Resolve a configured path against the repository root when relative."""
+    path = Path(path_str)
+    if path.is_absolute():
+        return path.resolve()
+    return (PROJECT_ROOT / path).resolve()
+
+
 @dataclass
 class Settings:
     """Application settings with environment variable overrides."""
@@ -27,6 +38,15 @@ class Settings:
 
     def __post_init__(self) -> None:
         """Ensure required directories exist after initialization."""
+        self.database_path = str(resolve_app_path(self.database_path))
+        self.output_dir = str(resolve_app_path(self.output_dir))
+        self.work_dir = str(resolve_app_path(self.work_dir))
+
+        if self.comfyui_output_dir:
+            self.comfyui_output_dir = str(resolve_app_path(self.comfyui_output_dir))
+        if self.comfyui_input_dir:
+            self.comfyui_input_dir = str(resolve_app_path(self.comfyui_input_dir))
+
         Path(self.output_dir).mkdir(parents=True, exist_ok=True)
         Path(self.work_dir).mkdir(parents=True, exist_ok=True)
 

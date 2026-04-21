@@ -6,9 +6,9 @@ import { Router } from './router.js';
 import { EventBus } from './event-bus.js';
 import { Storage } from './storage.js';
 import { ComfyUIClient } from './comfyui-client.js';
-import { OrchestratorClient } from './orchestrator-client.js';
+import { OrchestratorClient } from './orchestrator-client.js?v=20260421-asset-client-fix';
 import { FileUploader } from './file-uploader.js';
-import assetsModule from '../modules/assets/index.js';
+import assetsModule from '../modules/assets/index.js?v=20260421-asset-client-fix';
 import digitalHumanModule from '../modules/digital-human/index.js';
 import settingsModule from '../modules/settings/index.js';
 
@@ -20,10 +20,14 @@ const appContext = {
   rootEl: null,
   comfyClient: null,
   orchestratorClient: null,
+  ensureOrchestratorClient: null,
   fileUploader: null,
+  showToast,
   _modules: new Map(),
   _activeModule: null,
 };
+
+const DEFAULT_ORCHESTRATOR_URL = 'http://localhost:18688';
 
 // ── Toast Helper ───────────────────────────────────────────
 function showToast(message, type = 'info', duration = 3000) {
@@ -98,13 +102,18 @@ function initSidebar() {
 
 // ── Sidebar Navigation ─────────────────────────────────────
 function initNavigation() {
-  document.querySelectorAll('.nav-item[data-route]').forEach(el => {
-    el.addEventListener('click', () => {
-      const route = el.dataset.route;
-      if (route) {
-        appContext.router.navigate(route);
-      }
-    });
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar) return;
+
+  sidebar.addEventListener('click', (event) => {
+    const navItem = event.target.closest('.nav-item[data-route]');
+    if (!navItem) return;
+
+    const route = navItem.dataset.route;
+    if (!route) return;
+
+    event.preventDefault();
+    appContext.router.navigate(route);
   });
 }
 
@@ -151,6 +160,89 @@ function updateServerAddress(address) {
   }
 }
 
+async function requestOrchestratorJson(client, path, options = {}) {
+  const baseUrl = (client?.baseUrl || DEFAULT_ORCHESTRATOR_URL).replace(/\/+$/, '');
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), options.timeout || 30000);
+
+  try {
+    const response = await fetch(`${baseUrl}${path}`, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    clearTimeout(timeout);
+    throw error;
+  }
+}
+
+function patchOrchestratorClient(client) {
+  if (!client) return null;
+
+  if (typeof client.listAssets !== 'function') {
+    client.listAssets = function listAssets() {
+      return requestOrchestratorJson(this, '/api/assets', { timeout: 15000 });
+    };
+  }
+
+  if (typeof client.deleteAsset !== 'function') {
+    client.deleteAsset = function deleteAsset(assetId) {
+      return requestOrchestratorJson(this, `/api/assets/${assetId}`, { method: 'DELETE' });
+    };
+  }
+
+  if (typeof client.batchDeleteAssets !== 'function') {
+    client.batchDeleteAssets = function batchDeleteAssets(assetIds) {
+      return requestOrchestratorJson(this, '/api/assets/batch-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ids: assetIds }),
+      });
+    };
+  }
+
+  return client;
+}
+
+function ensureOrchestratorClient(settings = appContext.storage?.get('settings', {}) || {}) {
+  if (!appContext.eventBus) return null;
+
+  const orchUrl = (settings.orchestratorBaseUrl || DEFAULT_ORCHESTRATOR_URL).trim();
+  if (!orchUrl) return null;
+
+  if (!appContext.orchestratorClient) {
+    const orchClient = new OrchestratorClient({ baseUrl: orchUrl, eventBus: appContext.eventBus });
+    appContext.orchestratorClient = patchOrchestratorClient(orchClient);
+    orchClient.connect();
+    console.log('[App] Orchestrator client initialized:', orchUrl);
+    return appContext.orchestratorClient;
+  }
+
+  patchOrchestratorClient(appContext.orchestratorClient);
+
+  if (appContext.orchestratorClient.baseUrl !== orchUrl) {
+    appContext.orchestratorClient.setBaseUrl(orchUrl);
+    console.log('[App] Orchestrator client updated:', orchUrl);
+    return appContext.orchestratorClient;
+  }
+
+  if (appContext.orchestratorClient.connectionState === 'disconnected') {
+    appContext.orchestratorClient.connect();
+  }
+
+  return appContext.orchestratorClient;
+}
+
 // ── App Initialization ─────────────────────────────────────
 async function init() {
   console.log('[App] CreatorFlow initializing...');
@@ -164,6 +256,7 @@ async function init() {
   appContext.eventBus = eventBus;
   appContext.storage = storage;
   appContext.rootEl = document.getElementById('app-shell');
+  appContext.ensureOrchestratorClient = ensureOrchestratorClient;
 
   // Expose globally for console debugging
   window.__cf = appContext;
@@ -195,15 +288,9 @@ async function init() {
   appContext.comfyClient = comfyClient;
   appContext.fileUploader = fileUploader;
 
-  // Init Orchestrator client if configured
-  const execMode = settings.executionMode || 'orchestrated';
-  const orchUrl = settings.orchestratorBaseUrl;
-  if (orchUrl && execMode !== 'direct') {
-    const orchClient = new OrchestratorClient({ baseUrl: orchUrl, eventBus });
-    appContext.orchestratorClient = orchClient;
-    orchClient.connect();
-    console.log('[App] Orchestrator client initialized:', orchUrl);
-  }
+  // Init Orchestrator client with default local endpoint so assets page
+  // can work even before the user explicitly saves settings.
+  ensureOrchestratorClient(settings);
 
   // Event listeners for status bar updates
   eventBus.on('comfy:connection-changed', (state) => {
@@ -214,6 +301,10 @@ async function init() {
     if (data.connectionState !== undefined) updateConnectionStatus(data.connectionState);
     if (data.queueRunning !== undefined) updateQueueSummary(data.queueRunning, data.queueTotal || 0);
     if (data.serverAddress !== undefined) updateServerAddress(data.serverAddress);
+  });
+
+  eventBus.on('settings:changed', (nextSettings) => {
+    ensureOrchestratorClient(nextSettings);
   });
 
   // Start router (triggers module mount, which needs comfyClient/fileUploader)

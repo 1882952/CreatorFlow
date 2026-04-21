@@ -6,6 +6,7 @@ __pycache__/
 .venv/
 venv/
 env/
+.playwright-cli/
 
 # Data & generated files
 data/output/

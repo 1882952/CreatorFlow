@@ -5,17 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CreatorFlow - AI 内容创作平台</title>
   <link rel="icon" type="image/svg+xml" href="./assets/logo.svg">
-  <link rel="stylesheet" href="./styles/variables.css">
-  <link rel="stylesheet" href="./styles/base.css">
-  <link rel="stylesheet" href="./styles/layout.css">
-  <link rel="stylesheet" href="./styles/components.css">
-  <link rel="stylesheet" href="./modules/assets/assets.css">
-  <link rel="stylesheet" href="./modules/digital-human/digital-human.css">
+  <link rel="stylesheet" href="./styles/variables.css?v=20260421-asset-client-fix">
+  <link rel="stylesheet" href="./styles/base.css?v=20260421-asset-client-fix">
+  <link rel="stylesheet" href="./styles/layout.css?v=20260421-asset-client-fix">
+  <link rel="stylesheet" href="./styles/components.css?v=20260421-asset-client-fix">
+  <link rel="stylesheet" href="./modules/assets/assets.css?v=20260421-asset-client-fix">
+  <link rel="stylesheet" href="./modules/digital-human/digital-human.css?v=20260421-asset-client-fix">
 </head>
 <body>
   <div id="app-shell">
     <div id="app-body">
-      <!-- Sidebar -->
       <aside id="sidebar">
         <div class="sidebar-header">
           <img src="./assets/logo.svg" alt="CF" class="logo-icon">
@@ -23,7 +22,7 @@
         </div>
 
         <nav class="sidebar-nav">
-          <div class="nav-item" data-route="/assets">
+          <a class="nav-item" href="#/assets" data-route="/assets">
             <span class="nav-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -32,9 +31,9 @@
               </svg>
             </span>
             <span class="nav-label">资产总览</span>
-          </div>
+          </a>
 
-          <div class="nav-item active" data-route="/digital-human">
+          <a class="nav-item active" href="#/digital-human" data-route="/digital-human">
             <span class="nav-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -42,11 +41,11 @@
               </svg>
             </span>
             <span class="nav-label">数字人生成</span>
-          </div>
+          </a>
         </nav>
 
         <div class="sidebar-footer">
-          <div class="nav-item" data-route="/settings">
+          <a class="nav-item" href="#/settings" data-route="/settings">
             <span class="nav-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"/>
@@ -54,7 +53,7 @@
               </svg>
             </span>
             <span class="nav-label">设置</span>
-          </div>
+          </a>
 
           <button class="sidebar-toggle" id="sidebar-toggle" data-tooltip="折叠侧边栏">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -64,14 +63,12 @@
         </div>
       </aside>
 
-      <!-- Main Content -->
       <main id="main-content">
         <div id="module-header-slot"></div>
         <div id="module-content-slot"></div>
       </main>
     </div>
 
-    <!-- Status Bar -->
     <footer id="statusbar">
       <div class="status-item" id="connection-status">
         <span class="status-dot disconnected"></span>
@@ -86,9 +83,8 @@
     </footer>
   </div>
 
-  <!-- Toast Container -->
   <div class="toast-container" id="toast-container"></div>
 
-  <script type="module" src="./core/app.js"></script>
+  <script type="module" src="./core/app.js?v=20260421-asset-client-fix"></script>
 </body>
 </html>
