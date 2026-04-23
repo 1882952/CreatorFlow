@@ -78,6 +78,8 @@ export class TaskEditor {
   #createNameSection(task) {
     const section = document.createElement('div');
     section.className = 'dh-section';
+    section.style.animationDelay = '200ms';
+    section.style.animationDelay = '0ms';
 
     const title = document.createElement('div');
     title.className = 'dh-section-title';
@@ -116,6 +118,7 @@ export class TaskEditor {
   #createImageSection(task) {
     const section = document.createElement('div');
     section.className = 'dh-section';
+    section.style.animationDelay = '50ms';
 
     const title = document.createElement('div');
     title.className = 'dh-section-title';
@@ -184,11 +187,15 @@ export class TaskEditor {
       const progress = document.createElement('div');
       progress.className = 'dh-upload-preview';
       progress.innerHTML = `
-        <div class="dh-upload-thumb">
-          <div class="spinner"></div>
+        <div class="dh-upload-thumb" style="position:relative;">
+          <div style="width:40px;height:40px;border-radius:50%;border:3px solid rgba(139,92,246,0.15);border-top-color:var(--color-primary);animation:spinGlow 0.8s linear infinite;"></div>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--color-primary);box-shadow:0 0 8px var(--color-primary-glow);"></div>
+          </div>
         </div>
         <div class="dh-upload-info">
-          <div class="dh-upload-filename">上传中...</div>
+          <div class="dh-upload-filename" style="color:var(--color-primary-light);">上传中...</div>
+          <div class="dh-upload-meta">请稍候，文件正在处理</div>
         </div>
       `;
       section.appendChild(progress);
@@ -244,6 +251,7 @@ export class TaskEditor {
   #createAudioSection(task) {
     const section = document.createElement('div');
     section.className = 'dh-section';
+    section.style.animationDelay = '100ms';
 
     const title = document.createElement('div');
     title.className = 'dh-section-title';
@@ -316,11 +324,15 @@ export class TaskEditor {
       const progress = document.createElement('div');
       progress.className = 'dh-upload-preview';
       progress.innerHTML = `
-        <div class="dh-upload-thumb">
-          <div class="spinner"></div>
+        <div class="dh-upload-thumb" style="position:relative;">
+          <div style="width:40px;height:40px;border-radius:50%;border:3px solid rgba(139,92,246,0.15);border-top-color:var(--color-primary);animation:spinGlow 0.8s linear infinite;"></div>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--color-primary);box-shadow:0 0 8px var(--color-primary-glow);"></div>
+          </div>
         </div>
         <div class="dh-upload-info">
-          <div class="dh-upload-filename">上传中...</div>
+          <div class="dh-upload-filename" style="color:var(--color-primary-light);">上传中...</div>
+          <div class="dh-upload-meta">请稍候，文件正在处理</div>
         </div>
       `;
       section.appendChild(progress);
@@ -375,6 +387,7 @@ export class TaskEditor {
   #createPromptSection(task) {
     const section = document.createElement('div');
     section.className = 'dh-section';
+    section.style.animationDelay = '150ms';
 
     const title = document.createElement('div');
     title.className = 'dh-section-title';
@@ -427,7 +440,7 @@ export class TaskEditor {
     header.className = 'dh-advanced-header' + (this.#advancedExpanded ? ' expanded' : '');
     header.dataset.action = 'toggle-advanced';
     header.innerHTML = `
-      <svg class="dh-advanced-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+      <svg class="dh-advanced-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
         <polyline points="9 18 15 12 9 6"/>
       </svg>
       高级设置
@@ -437,7 +450,9 @@ export class TaskEditor {
     // Body
     const body = document.createElement('div');
     body.className = 'dh-advanced-body';
-    body.style.display = this.#advancedExpanded ? 'flex' : 'none';
+    body.style.maxHeight = this.#advancedExpanded ? '500px' : '0';
+    body.style.opacity = this.#advancedExpanded ? '1' : '0';
+    body.style.overflow = 'hidden';
     body.dataset.role = 'advanced-body';
 
     // Seed
@@ -653,7 +668,10 @@ export class TaskEditor {
         this.#advancedExpanded = !this.#advancedExpanded;
         const body = this.#container.querySelector('[data-role="advanced-body"]');
         const header = this.#container.querySelector('.dh-advanced-header');
-        if (body) body.style.display = this.#advancedExpanded ? 'flex' : 'none';
+        if (body) {
+          body.style.maxHeight = this.#advancedExpanded ? '500px' : '0';
+          body.style.opacity = this.#advancedExpanded ? '1' : '0';
+        }
         if (header) header.classList.toggle('expanded', this.#advancedExpanded);
         return;
       }

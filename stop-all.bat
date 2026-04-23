@@ -33,7 +33,6 @@ for /f "tokens=5" %%P in ('netstat -ano -p tcp 2^>nul ^| findstr "LISTENING" ^| 
     set "FOUND=1"
     echo     Killing PID %%P and child processes
     taskkill /F /T /PID %%P >nul 2>&1
-    call :kill_reload_children %%P
 )
 
 if "%FOUND%"=="0" (
@@ -64,12 +63,3 @@ if %ATTEMPT% geq 10 (
 ping -n 2 127.0.0.1 >nul
 goto wait_loop
 
-:kill_reload_children
-set "TARGET_PID=%~1"
-for /f "usebackq delims=" %%C in (`powershell -NoProfile -Command "$targetPid='%TARGET_PID%'; Get-CimInstance Win32_Process ^| Where-Object { $_.Name -eq 'python.exe' -and $_.CommandLine -like ('*parent_pid=' + $targetPid + '*') } ^| ForEach-Object { $_.ProcessId }"`) do (
-    if not "%%C"=="" (
-        echo     Killing reload child PID %%C
-        taskkill /F /PID %%C >nul 2>&1
-    )
-)
-exit /b 0

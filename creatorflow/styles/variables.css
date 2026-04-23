@@ -1,60 +1,89 @@
-/* CreatorFlow Design Tokens */
+/* ═══════════════════════════════════════════════════════════════
+   CreatorFlow Design Tokens — Lumina Glass (2026)
+   ═══════════════════════════════════════════════════════════════ */
+
 :root {
-  /* Primary */
-  --color-primary: #6C5CE7;
-  --color-primary-light: #A29BFE;
-  --color-accent: #00D2D3;
+  /* ── Primary Spectrum ─────────────────────────────────────── */
+  --color-primary: #8B5CF6;
+  --color-primary-light: #A78BFA;
+  --color-primary-dark: #7C3AED;
+  --color-primary-glow: rgba(139, 92, 246, 0.4);
 
-  /* Background */
-  --bg-primary: #0F0F1A;
-  --bg-secondary: #1A1A2E;
-  --bg-tertiary: #16213E;
-  --bg-glass: rgba(255, 255, 255, 0.05);
+  --color-accent: #06B6D4;
+  --color-accent-light: #22D3EE;
+  --color-accent-glow: rgba(6, 182, 212, 0.35);
 
-  /* Semantic */
-  --color-success: #00B894;
-  --color-warning: #FDCB6E;
-  --color-error: #FF6B6B;
-  --color-info: #74B9FF;
+  /* ── Background — Deep Cosmos ─────────────────────────────── */
+  --bg-primary: #030307;
+  --bg-secondary: rgba(15, 15, 25, 0.75);
+  --bg-secondary-solid: #0F0F19;
+  --bg-tertiary: rgba(25, 25, 40, 0.6);
+  --bg-glass: rgba(255, 255, 255, 0.03);
+  --bg-glass-hover: rgba(255, 255, 255, 0.06);
+  --bg-glass-active: rgba(139, 92, 246, 0.1);
 
-  /* Text */
-  --text-primary: #E8E8F0;
-  --text-secondary: #9898B0;
-  --text-disabled: rgba(152, 152, 176, 0.5);
+  /* ── Semantic — Neon Signal ───────────────────────────────── */
+  --color-success: #34D399;
+  --color-success-glow: rgba(52, 211, 153, 0.35);
+  --color-warning: #FBBF24;
+  --color-warning-glow: rgba(251, 191, 36, 0.3);
+  --color-error: #F87171;
+  --color-error-glow: rgba(248, 113, 113, 0.35);
+  --color-info: #60A5FA;
+  --color-info-glow: rgba(96, 165, 250, 0.3);
 
-  /* Border */
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(255, 255, 255, 0.15);
+  /* ── Text — Layered Grey-White ────────────────────────────── */
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-tertiary: #64748B;
+  --text-disabled: rgba(148, 163, 184, 0.4);
 
-  /* Radius */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  /* ── Border ───────────────────────────────────────────────── */
+  --border-color: rgba(255, 255, 255, 0.05);
+  --border-hover: rgba(255, 255, 255, 0.1);
+  --border-light: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(139, 92, 246, 0.25);
+
+  /* ── Radius ───────────────────────────────────────────────── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
   --radius-full: 9999px;
 
-  /* Spacing */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 12px;
-  --space-lg: 16px;
-  --space-xl: 24px;
-  --space-2xl: 32px;
+  /* ── Spacing — Generous ───────────────────────────────────── */
+  --space-xs: 6px;
+  --space-sm: 10px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
 
-  /* Shadow */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 20px rgba(108, 92, 231, 0.3);
-  --shadow-glow-accent: 0 0 20px rgba(0, 210, 211, 0.3);
+  /* ── Shadow ───────────────────────────────────────────────── */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.3);
+  --shadow-glow-accent: 0 0 20px rgba(6, 182, 212, 0.25);
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --shadow-card-hover: 0 12px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 
-  /* Transition */
-  --transition-fast: 150ms ease;
-  --transition-normal: 300ms ease;
-  --transition-slow: 500ms ease;
+  /* ── Glow Effects ─────────────────────────────────────────── */
+  --glow-primary: 0 0 20px var(--color-primary-glow), 0 0 40px rgba(139, 92, 246, 0.15);
+  --glow-accent: 0 0 20px var(--color-accent-glow);
+  --glow-success: 0 0 16px var(--color-success-glow);
+  --glow-error: 0 0 16px var(--color-error-glow);
+  --glow-info: 0 0 16px var(--color-info-glow);
 
-  /* Layout */
-  --sidebar-width: 220px;
-  --sidebar-collapsed-width: 60px;
-  --statusbar-height: 32px;
+  /* ── Transition — Fluid ───────────────────────────────────── */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ── Layout ───────────────────────────────────────────────── */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 68px;
+  --statusbar-height: 28px;
 }

@@ -21,11 +21,12 @@ export function renderSettingsPanel({ container, app }) {
   container.innerHTML = '';
 
   const wrapper = document.createElement('div');
-  wrapper.style.cssText = 'max-width:600px;margin:0 auto;';
+  wrapper.style.cssText = 'max-width:640px;margin:0 auto;';
 
   // ── ComfyUI Connection Section ───────────────────────────────
   const connCard = document.createElement('div');
   connCard.className = 'card';
+  connCard.style.marginBottom = '20px';
 
   const connHeader = document.createElement('div');
   connHeader.className = 'card-header';
@@ -33,22 +34,22 @@ export function renderSettingsPanel({ container, app }) {
   connCard.appendChild(connHeader);
 
   const connDesc = document.createElement('p');
-  connDesc.style.cssText = 'color:var(--text-secondary);margin-bottom:16px;font-size:13px;';
+  connDesc.style.cssText = 'color:var(--text-tertiary);margin-bottom:20px;font-size:14px;line-height:1.6;';
   connDesc.textContent = '配置 ComfyUI 服务器地址和连接选项。';
   connCard.appendChild(connDesc);
 
   // Connection status display
   const statusRow = document.createElement('div');
-  statusRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:16px;';
+  statusRow.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:20px;padding:12px 16px;background:rgba(255,255,255,0.02);border-radius:var(--radius-md);border:1px solid var(--border-color);';
 
   const statusDot = document.createElement('span');
-  statusDot.className = 'status-dot';
+  statusDot.className = 'glow-dot';
   statusDot.dataset.role = 'settings-status-dot';
-  statusDot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:var(--text-disabled);';
+  statusDot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:var(--text-disabled);flex-shrink:0;';
 
   const statusText = document.createElement('span');
   statusText.dataset.role = 'settings-status-text';
-  statusText.style.cssText = 'font-size:12px;color:var(--text-secondary);';
+  statusText.style.cssText = 'font-size:13px;font-weight:500;color:var(--text-secondary);';
   statusText.textContent = '检测中...';
 
   statusRow.appendChild(statusDot);
@@ -57,15 +58,15 @@ export function renderSettingsPanel({ container, app }) {
 
   // Server address input
   const inputGroup = document.createElement('div');
-  inputGroup.style.cssText = 'display:flex;flex-direction:column;gap:12px;';
+  inputGroup.style.cssText = 'display:flex;flex-direction:column;gap:14px;';
 
   const label = document.createElement('label');
-  label.style.cssText = 'display:block;margin-bottom:4px;font-size:12px;color:var(--text-secondary);';
+  label.style.cssText = 'display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);';
   label.textContent = '服务器地址';
   inputGroup.appendChild(label);
 
   const inputRow = document.createElement('div');
-  inputRow.style.cssText = 'display:flex;gap:8px;';
+  inputRow.style.cssText = 'display:flex;gap:10px;';
 
   const urlInput = document.createElement('input');
   urlInput.type = 'text';
@@ -87,7 +88,7 @@ export function renderSettingsPanel({ container, app }) {
   // Test result
   const testResult = document.createElement('div');
   testResult.dataset.role = 'test-result';
-  testResult.style.cssText = 'margin-top:8px;font-size:12px;min-height:18px;';
+  testResult.style.cssText = 'margin-top:10px;font-size:13px;min-height:20px;font-weight:500;';
   connCard.appendChild(testResult);
 
   wrapper.appendChild(connCard);
@@ -95,12 +96,12 @@ export function renderSettingsPanel({ container, app }) {
   // ── Application Preferences Section ──────────────────────────
   const prefCard = document.createElement('div');
   prefCard.className = 'card';
-  prefCard.style.marginTop = '16px';
+  prefCard.style.marginTop = '20px';
 
   // ── Orchestrator Service Section ─────────────────────────────
   const orchCard = document.createElement('div');
   orchCard.className = 'card';
-  orchCard.style.marginTop = '16px';
+  orchCard.style.marginTop = '20px';
 
   const orchHeader = document.createElement('div');
   orchHeader.className = 'card-header';
@@ -108,21 +109,21 @@ export function renderSettingsPanel({ container, app }) {
   orchCard.appendChild(orchHeader);
 
   const orchDesc = document.createElement('p');
-  orchDesc.style.cssText = 'color:var(--text-secondary);margin-bottom:16px;font-size:13px;';
+  orchDesc.style.cssText = 'color:var(--text-tertiary);margin-bottom:20px;font-size:14px;line-height:1.6;';
   orchDesc.textContent = '配置本地编排服务地址和分段生成参数。';
   orchCard.appendChild(orchDesc);
 
   // Orchestrator URL
   const orchGroup = document.createElement('div');
-  orchGroup.style.cssText = 'display:flex;flex-direction:column;gap:12px;';
+  orchGroup.style.cssText = 'display:flex;flex-direction:column;gap:14px;';
 
   const orchLabel = document.createElement('label');
-  orchLabel.style.cssText = 'display:block;margin-bottom:4px;font-size:12px;color:var(--text-secondary);';
+  orchLabel.style.cssText = 'display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);';
   orchLabel.textContent = '编排服务地址';
   orchGroup.appendChild(orchLabel);
 
   const orchRow = document.createElement('div');
-  orchRow.style.cssText = 'display:flex;gap:8px;';
+  orchRow.style.cssText = 'display:flex;gap:10px;';
 
   const orchInput = document.createElement('input');
   orchInput.type = 'text';
@@ -144,15 +145,15 @@ export function renderSettingsPanel({ container, app }) {
   // Orchestrator test result
   const orchTestResult = document.createElement('div');
   orchTestResult.dataset.role = 'orch-test-result';
-  orchTestResult.style.cssText = 'margin-top:8px;font-size:12px;min-height:18px;';
+  orchTestResult.style.cssText = 'margin-top:10px;font-size:13px;min-height:20px;font-weight:500;';
   orchCard.appendChild(orchTestResult);
 
   // Default output directory
   const outputGroup = document.createElement('div');
-  outputGroup.style.cssText = 'margin-top:12px;';
+  outputGroup.style.cssText = 'margin-top:16px;';
 
   const outputLabel = document.createElement('label');
-  outputLabel.style.cssText = 'display:block;margin-bottom:4px;font-size:12px;color:var(--text-secondary);';
+  outputLabel.style.cssText = 'display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);';
   outputLabel.textContent = '默认输出目录';
   outputGroup.appendChild(outputLabel);
 
@@ -168,10 +169,10 @@ export function renderSettingsPanel({ container, app }) {
 
   // Execution mode toggle
   const modeGroup = document.createElement('div');
-  modeGroup.style.cssText = 'margin-top:12px;display:flex;align-items:center;justify-content:space-between;';
+  modeGroup.style.cssText = 'margin-top:16px;display:flex;align-items:center;justify-content:space-between;';
 
   const modeLabel = document.createElement('span');
-  modeLabel.style.cssText = 'font-size:13px;color:var(--text-primary);';
+  modeLabel.style.cssText = 'font-size:14px;font-weight:500;color:var(--text-primary);';
   modeLabel.textContent = '执行模式';
 
   const modeSelect = document.createElement('select');
@@ -188,10 +189,10 @@ export function renderSettingsPanel({ container, app }) {
 
   // Cleanup delay
   const cleanupGroup = document.createElement('div');
-  cleanupGroup.style.cssText = 'margin-top:12px;display:flex;align-items:center;justify-content:space-between;';
+  cleanupGroup.style.cssText = 'margin-top:16px;display:flex;align-items:center;justify-content:space-between;';
 
   const cleanupLabel = document.createElement('span');
-  cleanupLabel.style.cssText = 'font-size:13px;color:var(--text-primary);';
+  cleanupLabel.style.cssText = 'font-size:14px;font-weight:500;color:var(--text-primary);';
   cleanupLabel.textContent = '自动清理延迟（秒）';
 
   const cleanupInput = document.createElement('input');
@@ -207,10 +208,10 @@ export function renderSettingsPanel({ container, app }) {
 
   // Debug mode toggle
   const debugGroup = document.createElement('div');
-  debugGroup.style.cssText = 'margin-top:12px;display:flex;align-items:center;justify-content:space-between;padding:4px 0;';
+  debugGroup.style.cssText = 'margin-top:16px;display:flex;align-items:center;justify-content:space-between;padding:6px 0;';
 
   const debugLabel = document.createElement('span');
-  debugLabel.style.cssText = 'font-size:13px;color:var(--text-primary);';
+  debugLabel.style.cssText = 'font-size:14px;font-weight:500;color:var(--text-primary);';
   debugLabel.textContent = '调试模式（保留中间文件）';
 
   const debugCb = document.createElement('input');
@@ -234,10 +235,10 @@ export function renderSettingsPanel({ container, app }) {
 
   // Sidebar collapsed toggle
   const sidebarRow = document.createElement('div');
-  sidebarRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:4px 0;';
+  sidebarRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 0;';
 
   const sidebarLabel = document.createElement('span');
-  sidebarLabel.style.cssText = 'font-size:13px;color:var(--text-primary);';
+  sidebarLabel.style.cssText = 'font-size:14px;font-weight:500;color:var(--text-primary);';
   sidebarLabel.textContent = '侧边栏默认折叠';
 
   const sidebarCb = document.createElement('input');
@@ -258,7 +259,7 @@ export function renderSettingsPanel({ container, app }) {
   // ── Save Button ──────────────────────────────────────────────
   const saveBtn = document.createElement('button');
   saveBtn.className = 'btn btn-primary';
-  saveBtn.style.marginTop = '16px';
+  saveBtn.style.marginTop = '24px';
   saveBtn.style.width = '100%';
   saveBtn.textContent = '保存设置';
   saveBtn.dataset.action = 'save-settings';
@@ -385,25 +386,30 @@ export function renderSettingsPanel({ container, app }) {
     if (!dot || !text) return;
 
     dot.style.background = '';
+    dot.style.boxShadow = '';
     switch (state) {
       case 'connected':
         dot.style.background = 'var(--color-success)';
+        dot.style.boxShadow = '0 0 8px var(--color-success-glow)';
         text.textContent = '已连接';
         text.style.color = 'var(--color-success)';
         break;
       case 'connecting':
       case 'reconnecting':
         dot.style.background = 'var(--color-warning)';
+        dot.style.boxShadow = '0 0 8px var(--color-warning-glow)';
         text.textContent = '连接中...';
         text.style.color = 'var(--color-warning)';
         break;
       case 'error':
         dot.style.background = 'var(--color-error)';
+        dot.style.boxShadow = '0 0 8px var(--color-error-glow)';
         text.textContent = '连接错误';
         text.style.color = 'var(--color-error)';
         break;
       default:
         dot.style.background = 'var(--text-disabled)';
+        dot.style.boxShadow = 'none';
         text.textContent = '未连接';
         text.style.color = 'var(--text-secondary)';
     }

@@ -130,9 +130,12 @@ export class AssetsModule {
 
     const grid = document.createElement('div');
     grid.className = 'assets-grid';
-    for (const asset of this.#assets) {
-      grid.appendChild(this.#createAssetCard(asset));
-    }
+    this.#assets.forEach((asset, index) => {
+      const card = this.#createAssetCard(asset);
+      card.style.animationDelay = `${index * 50}ms`;
+      card.classList.add('card-enter');
+      grid.appendChild(card);
+    });
 
     page.appendChild(grid);
     this.#contentSlot.appendChild(page);
@@ -206,6 +209,9 @@ export class AssetsModule {
   #createAssetCard(asset) {
     const card = document.createElement('article');
     card.className = 'card assets-card';
+    if (this.#selectedIds.has(asset.id)) {
+      card.classList.add('selected');
+    }
 
     const top = document.createElement('div');
     top.className = 'assets-card-top';
@@ -218,7 +224,7 @@ export class AssetsModule {
     checkbox.dataset.assetId = asset.id;
     checkbox.checked = this.#selectedIds.has(asset.id);
     const checkboxText = document.createElement('span');
-    checkboxText.textContent = '选择';
+    checkboxText.textContent = this.#selectedIds.has(asset.id) ? '已选' : '选择';
     select.appendChild(checkbox);
     select.appendChild(checkboxText);
 
@@ -309,6 +315,7 @@ export class AssetsModule {
       if (!assetId) return;
       this.#setSelected(assetId, target.checked);
       this.#renderContent();
+      return;
     }
   }
 

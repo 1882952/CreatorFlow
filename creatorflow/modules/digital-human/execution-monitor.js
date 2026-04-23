@@ -379,6 +379,7 @@ export class ExecutionMonitor {
   #createSegmentRow(seg) {
     const row = document.createElement('div');
     row.className = 'dh-segment-row';
+    row.dataset.status = seg.status;
     row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--radius-sm);margin-bottom:2px;background:var(--bg-glass);';
 
     // Status indicator dot
@@ -838,7 +839,11 @@ export class ExecutionMonitor {
       const empty = body.querySelector('div[style*="font-style:italic"]');
       if (empty) empty.remove();
 
-      body.appendChild(this.#createLogEntry({ time, msg, type }));
+      const entry = this.#createLogEntry({ time, msg, type });
+      entry.style.background = type === 'error' ? 'rgba(248,113,113,0.08)' : type === 'success' ? 'rgba(52,211,153,0.06)' : 'rgba(96,165,250,0.04)';
+      entry.style.borderRadius = '4px';
+      entry.style.animation = 'fadeIn 0.3s ease';
+      body.appendChild(entry);
 
       // Auto-scroll to bottom
       body.scrollTop = body.scrollHeight;

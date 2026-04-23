@@ -43,9 +43,12 @@ export class TaskList {
     if (tasks.length === 0) {
       scroll.appendChild(this.#createEmptyState());
     } else {
-      for (const task of tasks) {
-        scroll.appendChild(this.#createTaskItem(task, task.id === selectedId));
-      }
+      tasks.forEach((task, index) => {
+        const item = this.#createTaskItem(task, task.id === selectedId);
+        item.style.animationDelay = `${index * 30}ms`;
+        item.classList.add('task-enter');
+        scroll.appendChild(item);
+      });
     }
     this.#container.appendChild(scroll);
 
@@ -70,7 +73,7 @@ export class TaskList {
     const addBtn = document.createElement('button');
     addBtn.className = 'btn btn-primary btn-sm';
     addBtn.dataset.action = 'create';
-    addBtn.textContent = '+ 新增任务';
+    addBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>新增任务`;
 
     const spacer = document.createElement('div');
     spacer.className = 'dh-toolbar-spacer';
@@ -103,15 +106,15 @@ export class TaskList {
   #createEmptyState() {
     const el = document.createElement('div');
     el.className = 'empty-state';
-    el.style.padding = '32px 16px';
+    el.style.padding = '48px 16px';
     el.innerHTML = `
-      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:36px;height:36px;">
+      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
         <rect x="3" y="3" width="18" height="18" rx="2"/>
         <line x1="12" y1="8" x2="12" y2="16"/>
         <line x1="8" y1="12" x2="16" y2="12"/>
       </svg>
-      <div class="empty-title" style="font-size:13px;">暂无任务</div>
-      <div class="empty-desc" style="font-size:11px;">点击"新增任务"或拖入图片批量创建</div>
+      <div class="empty-title">暂无任务</div>
+      <div class="empty-desc">点击「新增任务」或拖入图片批量创建</div>
     `;
     return el;
   }
@@ -266,12 +269,18 @@ export class TaskList {
       this.#dragSrcId = item.dataset.taskId;
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', item.dataset.taskId);
-      item.style.opacity = '0.4';
+      item.style.opacity = '0.5';
+    item.style.transform = 'scale(1.02)';
+    item.style.boxShadow = '0 8px 32px rgba(0,0,0,0.4)';
     });
 
     this.#container.addEventListener('dragend', (e) => {
       const item = /** @type {HTMLElement} */ (e.target).closest('.dh-task-item');
-      if (item) item.style.opacity = '';
+      if (item) {
+        item.style.opacity = '';
+        item.style.transform = '';
+        item.style.boxShadow = '';
+      }
       this.#dragSrcId = null;
       // Clean up all drag-over states
       this.#container.querySelectorAll('.dh-task-item.drag-over').forEach(el => {

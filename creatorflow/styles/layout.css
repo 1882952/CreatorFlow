@@ -1,6 +1,8 @@
-/* CreatorFlow Layout */
+/* ═══════════════════════════════════════════════════════════════
+   CreatorFlow Layout — Lumina Glass (2026)
+   ═══════════════════════════════════════════════════════════════ */
 
-/* App Shell */
+/* ── App Shell ──────────────────────────────────────────────── */
 #app-shell {
   display: flex;
   flex-direction: column;
@@ -8,25 +10,38 @@
   overflow: hidden;
 }
 
-/* Main layout row: sidebar + content */
+/* ── Main Layout Row ────────────────────────────────────────── */
 #app-body {
   display: flex;
   flex: 1;
   overflow: hidden;
 }
 
-/* Sidebar */
+/* ── Sidebar ────────────────────────────────────────────────── */
 #sidebar {
   width: var(--sidebar-width);
   min-width: var(--sidebar-width);
   height: 100%;
-  background: var(--bg-secondary);
+  background: linear-gradient(180deg, rgba(15, 15, 30, 0.9) 0%, rgba(10, 10, 20, 0.95) 100%);
+  background-blend-mode: overlay;
+  backdrop-filter: blur(40px) saturate(1.2);
+  -webkit-backdrop-filter: blur(40px) saturate(1.2);
   border-right: 1px solid var(--border-color);
+  position: relative;
   display: flex;
   flex-direction: column;
-  transition: width var(--transition-normal), min-width var(--transition-normal);
+  transition: width var(--transition-slow), min-width var(--transition-slow);
   overflow: hidden;
   z-index: 10;
+}
+
+/* Ambient left edge glow */
+#sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.06) 0%, transparent 40%, transparent 60%, rgba(6, 182, 212, 0.04) 100%);
+  pointer-events: none;
 }
 
 #sidebar.collapsed {
@@ -34,41 +49,52 @@
   min-width: var(--sidebar-collapsed-width);
 }
 
-/* Sidebar Header */
+/* ── Sidebar Header ─────────────────────────────────────────── */
 .sidebar-header {
   display: flex;
   align-items: center;
   gap: var(--space-md);
   padding: var(--space-lg);
   border-bottom: 1px solid var(--border-color);
-  min-height: 56px;
+  min-height: 64px;
+  position: relative;
 }
 
 .sidebar-header .logo-icon {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.4));
+  transition: filter var(--transition-normal);
+}
+
+.sidebar-header .logo-icon:hover {
+  filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.6));
 }
 
 .sidebar-header .logo-text {
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 800;
   color: var(--text-primary);
   white-space: nowrap;
-  transition: opacity var(--transition-normal);
+  transition: opacity var(--transition-slow), transform var(--transition-slow);
+  letter-spacing: -0.02em;
 }
 
 #sidebar.collapsed .logo-text {
   opacity: 0;
+  transform: translateX(-8px);
   width: 0;
   overflow: hidden;
 }
 
-/* Sidebar Nav */
+/* ── Sidebar Nav ────────────────────────────────────────────── */
 .sidebar-nav {
   flex: 1;
-  padding: var(--space-sm);
+  padding: var(--space-md);
   overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
 }
 
 .nav-item {
@@ -79,120 +105,180 @@
   border-radius: var(--radius-md);
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-normal);
   white-space: nowrap;
   user-select: none;
   text-decoration: none;
   border: none;
   background: transparent;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.nav-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 60%;
+  background: linear-gradient(180deg, var(--color-primary), var(--color-accent));
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  transition: width var(--transition-normal);
 }
 
 .nav-item:hover {
-  background: var(--bg-glass);
+  background: var(--bg-glass-hover);
   color: var(--text-primary);
 }
 
+.nav-item:hover::before {
+  width: 3px;
+}
+
 .nav-item.active {
-  background: rgba(108, 92, 231, 0.15);
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.05));
   color: var(--color-primary-light);
 }
 
+.nav-item.active::before {
+  width: 3px;
+}
+
 .nav-item .nav-icon {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform var(--transition-normal);
+}
+
+.nav-item:hover .nav-icon {
+  transform: scale(1.1);
 }
 
 .nav-item .nav-label {
-  transition: opacity var(--transition-normal);
+  transition: opacity var(--transition-slow), transform var(--transition-slow);
+  font-size: 14px;
+  font-weight: 500;
   overflow: hidden;
 }
 
 #sidebar.collapsed .nav-label {
   opacity: 0;
+  transform: translateX(-4px);
   width: 0;
 }
 
-/* Sidebar Footer */
+/* ── Sidebar Footer ─────────────────────────────────────────── */
 .sidebar-footer {
-  padding: var(--space-sm);
+  padding: var(--space-md);
   border-top: 1px solid var(--border-color);
+  position: relative;
 }
 
-/* Sidebar Toggle */
+/* ── Sidebar Toggle ─────────────────────────────────────────── */
 .sidebar-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: var(--space-sm);
-  margin: var(--space-sm);
+  margin: var(--space-xs) auto 0;
   border-radius: var(--radius-md);
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-normal);
+  width: 100%;
 }
 
 .sidebar-toggle:hover {
-  background: var(--bg-glass);
+  background: var(--bg-glass-hover);
   color: var(--text-primary);
 }
 
 .sidebar-toggle svg {
   width: 18px;
   height: 18px;
-  transition: transform var(--transition-normal);
+  transition: transform var(--transition-slow);
 }
 
 #sidebar.collapsed .sidebar-toggle svg {
   transform: rotate(180deg);
 }
 
-/* Main Content */
+/* ── Main Content ───────────────────────────────────────────── */
 #main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   min-width: 0;
+  position: relative;
 }
 
-/* Module Slots */
+/* ── Module Slots ───────────────────────────────────────────── */
 #module-header-slot {
   padding: var(--space-lg) var(--space-xl);
   border-bottom: 1px solid var(--border-color);
-  background: var(--bg-secondary);
-  min-height: 56px;
+  background: transparent;
+  min-height: 64px;
   display: flex;
   align-items: center;
+  position: relative;
+}
+
+#module-header-slot::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.2), transparent);
 }
 
 #module-content-slot {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+  animation: contentEnter 350ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Status Bar */
+/* ── Status Bar ─────────────────────────────────────────────── */
 #statusbar {
   height: var(--statusbar-height);
   min-height: var(--statusbar-height);
-  background: var(--bg-secondary);
+  background: rgba(10, 10, 18, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   padding: 0 var(--space-lg);
   gap: var(--space-xl);
   font-size: 12px;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
+  position: relative;
+}
+
+#statusbar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
 }
 
 .status-item {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
+  gap: var(--space-sm);
   white-space: nowrap;
 }
 
@@ -201,18 +287,59 @@
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  position: relative;
 }
 
 .status-dot.connected {
   background: var(--color-success);
-  box-shadow: 0 0 6px rgba(0, 184, 148, 0.5);
+  box-shadow: 0 0 8px var(--color-success-glow);
+  animation: statusGlow 2s ease-in-out infinite;
 }
 
 .status-dot.disconnected {
   background: var(--color-error);
+  box-shadow: 0 0 4px var(--color-error-glow);
 }
 
 .status-dot.reconnecting {
   background: var(--color-warning);
   animation: pulse 1.5s infinite;
+}
+
+/* Tooltip — Glass Style */
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 6px 12px;
+  background: rgba(20, 20, 35, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all var(--transition-fast);
+  z-index: 100;
+  box-shadow: var(--shadow-md);
+}
+
+[data-tooltip]:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── Module Content Animations ──────────────────────────────── */
+.module-enter {
+  animation: contentEnter 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
